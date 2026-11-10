@@ -298,11 +298,12 @@ public final class MainActivity extends Activity {
    gas.setText("HP GAS ALERT\nNOT CONNECTED");status.setText("STATUS UNKNOWN");
    connection.setText(ble!=null?ble.message:"Bluetooth not connected");
    detail.setText(ble!=null&&ble.hasSelection()?"Automatic Bluetooth reconnect is active":"Select the Gas Alert v5.0 controller.");
+   detail.setVisibility(View.VISIBLE);
   }else{
    if("ALARM".equals(m)){gas.setText("HP GAS ALERT ON\nTAP TO RESET");status.setText("ALARM · ORANGE");}
    else if("NORMAL".equals(m)){gas.setText("HP GAS ALERT OFF\nTAP TO START");status.setText("NORMAL · GREEN");}
    else{gas.setText("LIGHTS OFF\nTAP TO TURN ON");status.setText("OFF");}
-   connection.setText(ble.message);detail.setText("");
+   connection.setText(ble.message);detail.setVisibility(View.GONE);
   }
   signal.setText(ble==null?"Signal: unavailable (disconnected)":ble.signalLabel());
   refreshLicenseLabel();
