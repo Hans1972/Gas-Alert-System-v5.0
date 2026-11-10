@@ -32,9 +32,11 @@ public final class MainActivity extends Activity {
  private HbLicenseManager licenseManager;
  private boolean licenseChecking=false;
  private String licenseWarningShownFor="";
+ private int lastLicenseBannerColor=Integer.MIN_VALUE;
+ private String lastLicenseBannerText="";
  private AlertDialog licenseBlockedDialog;
  private long lastLicenseCheckAt=0L;
- private static final long LICENSE_CHECK_INTERVAL_MS=30L*60L*1000L;
+ private static final long LICENSE_CHECK_INTERVAL_MS=5L*60L*1000L;
  private final HpBleService.Listener listener=()->render();
  private final ServiceConnection serviceConnection=new ServiceConnection(){
   @Override public void onServiceConnected(ComponentName name,IBinder binder){
@@ -47,6 +49,7 @@ public final class MainActivity extends Activity {
  private static final long BLINK_HALF_PERIOD_MS=500L;
  private final Runnable refresher=new Runnable(){@Override public void run(){
   render();
+  if(licenseManager!=null)checkLicenseOnStart();
   long now=SystemClock.elapsedRealtime();
   long untilNext=BLINK_HALF_PERIOD_MS-(now%BLINK_HALF_PERIOD_MS);
   h.postDelayed(this,untilNext);
@@ -273,9 +276,17 @@ public final class MainActivity extends Activity {
   if(licenseStatus==null||licenseManager==null)return;
   String license=licenseManager.status();
   boolean valid=license.startsWith("Licentie actief")||license.startsWith("Proefperiode actief");
-  licenseStatus.setText("🔑 "+license+" · tik voor licentiebeheer");
-  licenseStatus.setTextColor(valid?Color.rgb(190,255,203):Color.rgb(255,226,155));
-  licenseStatus.setBackground(rounded(valid?Color.argb(90,20,99,48):Color.argb(235,130,28,34)));
+  String label="🔑 "+license+" · tik voor licentiebeheer";
+  if(!label.equals(lastLicenseBannerText)){
+   licenseStatus.setText(label);
+   lastLicenseBannerText=label;
+  }
+  int tone=valid?1:0;
+  if(tone!=lastLicenseBannerColor){
+   licenseStatus.setTextColor(valid?Color.rgb(190,255,203):Color.rgb(255,226,155));
+   licenseStatus.setBackground(rounded(valid?Color.argb(90,20,99,48):Color.argb(235,130,28,34)));
+   lastLicenseBannerColor=tone;
+  }
   renderLicenseAccess();
  }
  private void checkLicenseOnStart(){
