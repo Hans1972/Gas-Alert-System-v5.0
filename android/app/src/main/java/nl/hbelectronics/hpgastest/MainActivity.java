@@ -50,8 +50,8 @@ public final class MainActivity extends Activity {
   stopScan();
   if(devices.isEmpty()&&picker!=null&&picker.isShowing()&&listAdapter!=null){
    labels.clear();
-   labels.add("Geen controller gevonden. Controleer de ESP32-C3 en sluit de v3-app.");
-   labels.add("Kies 'Opnieuw zoeken' om nogmaals te scannen.");
+   labels.add(tr("No controller found. Check the ESP32-C3 and close the v3 app."));
+   labels.add(tr("Tap 'Search again' to scan again."));
    listAdapter.notifyDataSetChanged();
   }
  };
@@ -149,12 +149,12 @@ public final class MainActivity extends Activity {
   if(ble!=null&&ble.hasSelection()){
    if(!ble.ready){
     new AlertDialog.Builder(this)
-     .setTitle("Controller niet verbonden")
-     .setMessage("De app heeft nog een eerder geselecteerde controller opgeslagen, maar heeft momenteel geen Bluetooth-verbinding.\n\nKies 'Opnieuw verbinden' voor een directe nieuwe poging, of 'Andere controller kiezen' om de opgeslagen selectie op deze telefoon te wissen en opnieuw te zoeken. Dit verandert de eigenaarsreservering op de ESP32 niet.")
-     .setPositiveButton("Opnieuw verbinden",(d,w)->{
+     .setTitle(tr("Controller not connected"))
+     .setMessage(tr("The app remembers a previously selected controller, but Bluetooth is currently disconnected.\n\nTry reconnecting, or choose another controller. This changes only the saved selection on this phone, not the ownership reservation on the ESP32."))
+     .setPositiveButton(tr("Reconnect"),(d,w)->{
       startService(new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_RECONNECT));
      })
-     .setNeutralButton("Andere controller kiezen",(d,w)->{
+     .setNeutralButton(tr("Choose another controller"),(d,w)->{
       startService(new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_CLEAR_SELECTION));
       h.postDelayed(()->{
        render();
@@ -162,17 +162,17 @@ public final class MainActivity extends Activity {
        else connectClicked();
       },400);
      })
-     .setNegativeButton("Annuleren",null).show();
+     .setNegativeButton(tr("Cancel"),null).show();
     return;
    }
-   new AlertDialog.Builder(this).setTitle("Release controller")
-    .setMessage("Release the controller for another phone and disconnect? Current LED and alarm state will not change.")
-    .setNegativeButton("Cancel",null).setPositiveButton("Release & disconnect",(d,w)->{
+   new AlertDialog.Builder(this).setTitle(tr("Release controller"))
+    .setMessage(tr("Release the controller for another phone and disconnect? Current LED and alarm state will not change."))
+    .setNegativeButton(tr("Cancel"),null).setPositiveButton(tr("Release & disconnect"),(d,w)->{
      startService(new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_DISCONNECT));
      h.postDelayed(this::render,200);
     }).show();return;
   }
-  if(adapter==null){connection.setText("Bluetooth is not supported");return;}
+  if(adapter==null){connection.setText(tr("Bluetooth is not supported"));return;}
   if(!permitted()){requestPermissions(new String[]{Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.BLUETOOTH_CONNECT},10);return;}
   if(!adapter.isEnabled()){startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),11);return;}
   scan();
@@ -206,14 +206,14 @@ public final class MainActivity extends Activity {
   if(scanning||adapter==null||!permitted())return;
   scanner=adapter.getBluetoothLeScanner();
   if(scanner==null){
-   new AlertDialog.Builder(this).setTitle("Bluetooth niet beschikbaar")
-    .setMessage("Schakel Bluetooth in en probeer opnieuw.").setPositiveButton("OK",null).show();
+   new AlertDialog.Builder(this).setTitle(tr("Bluetooth unavailable"))
+    .setMessage(tr("Turn on Bluetooth and try again.")).setPositiveButton("OK",null).show();
    return;
   }
   devices.clear();labels.clear();
-  labels.add("Zoeken naar HP Gas Alert-controller…");
+  labels.add(tr("Search for HP Gas Alert controller…"));
   listAdapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,labels);
-  picker=new AlertDialog.Builder(this).setTitle("Zoek HP Gas Alert-controller")
+  picker=new AlertDialog.Builder(this).setTitle(tr("Search for HP Gas Alert controller"))
    .setAdapter(listAdapter,(d,index)->{
     if(index<0||index>=devices.size())return;
     BluetoothDevice device=devices.get(index);stopScan();
@@ -221,9 +221,9 @@ public final class MainActivity extends Activity {
      .putExtra(HpBleService.EXTRA_ADDRESS,device.getAddress())
      .putExtra(HpBleService.EXTRA_NAME,"HP Gas Alert System v5.0");
     startForegroundService(i);
-   }).setNeutralButton("Opnieuw zoeken",(d,w)->{
+   }).setNeutralButton(tr("Search again"),(d,w)->{
     stopScan();h.postDelayed(this::scan,300);
-   }).setNegativeButton("Sluiten",(d,w)->stopScan()).create();
+   }).setNegativeButton(tr("Close"),(d,w)->stopScan()).create();
   picker.setOnDismissListener(d->stopScan());picker.show();
   try{
    scanning=true;
@@ -236,7 +236,7 @@ public final class MainActivity extends Activity {
   }catch(Exception e){
    stopScan();
    if(picker!=null&&picker.isShowing()){
-    labels.clear();labels.add("Bluetooth zoeken mislukt. Kies 'Opnieuw zoeken'.");
+    labels.clear();labels.add(tr("Bluetooth search failed. Tap 'Search again'."));
     listAdapter.notifyDataSetChanged();
    }
   }
@@ -262,7 +262,7 @@ public final class MainActivity extends Activity {
   @Override public void onScanFailed(int code){h.post(()->{
    stopScan();
    if(picker!=null&&picker.isShowing()){
-    labels.clear();labels.add("Scan mislukt (code "+code+"). Kies 'Opnieuw zoeken'.");
+    labels.clear();labels.add(tr("Bluetooth search failed. Tap 'Search again'.")+" ("+code+")");
     listAdapter.notifyDataSetChanged();
    }
   });}
