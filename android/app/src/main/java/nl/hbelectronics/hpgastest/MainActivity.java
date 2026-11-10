@@ -17,6 +17,8 @@ import java.util.*;
 /** Gas Alert v5.0 UI: preserves the big control and full-screen colors of v1.4. */
 public final class MainActivity extends Activity {
  private final Handler h=new Handler(Looper.getMainLooper());
+ private String tr(String english){return UiLanguage.t(this,english);}
+ private String currentLicenseStatus(){return UiLanguage.licenseStatus(this,licenseManager.status());}
  private BluetoothAdapter adapter;
  private BluetoothLeScanner scanner;
  private HpBleService ble;
@@ -122,9 +124,7 @@ public final class MainActivity extends Activity {
     .setNegativeButton("Cancel",null).setPositiveButton("Turn off",(d,w)->{if(ble!=null)ble.command("OFF");}).show();
   });
   settings=makeButton("⚙ Settings / Help",55,16);
-  settings.setOnClickListener(v->{
-   if(allowLicensedControl())showSettings();
-  });
+  settings.setOnClickListener(v->showSettings());
   gas.setBackground(rounded(Color.argb(78,255,255,255)));
   power.setBackground(rounded(Color.argb(45,255,255,255)));
   settings.setBackground(rounded(Color.argb(35,255,255,255)));
@@ -315,38 +315,61 @@ public final class MainActivity extends Activity {
    ?(connected?"Verbinding verbreken / andere controller":"Opnieuw verbinden / andere controller")
    :scanning?"Zoeken…":"Bluetooth verbinden");
   connect.setEnabled(!scanning&&(licenseOk||(ble!=null&&ble.hasSelection())));
-  settings.setEnabled(licenseOk&&connected&&!ble.busy);
-  settings.setAlpha(settings.isEnabled()?1f:.5f);
+  settings.setEnabled(true);settings.setAlpha(1f);
  }
  private void showSettings(){
-  if(!allowLicensedControl()||ble==null||!ble.ready)return;
   ScrollView scroll=new ScrollView(this);
   LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
   content.setPadding(dp(20),dp(12),dp(20),dp(18));scroll.addView(content);
   String[] keys={"greenBrightness","leds","layout","effect","brightness","tint","speed","afterglow","colorMode","buzzerMode","buzzerSeconds","pulseOnMs","pulseOffMs"};
   String[] names={"Green brightness (%)","Number of physical LEDs","LED layout (0 single, 1 double, 2 matrix)","Orange effect (1–40)","Orange brightness (%)","Orange hue (0–100)","Animation speed (25–200%)","Afterglow (0–100)","Color order (0–5)","Buzzer (0 continuous, 1 pulsed)","Buzzer duration (seconds)","Pulse ON (milliseconds)","Pulse OFF (milliseconds)"};
+  boolean editable=licenseManager!=null&&licenseManager.hasValidLicense()&&ble!=null&&ble.ready;
   for(int i=0;i<keys.length;i++){
-   final String key=keys[i],title=names[i];
-   Button b=new Button(this);b.setAllCaps(false);b.setText(title+"\n"+displayValue(key,valueOf(ble.config,key)));
+   final String key=keys[i],title=tr(names[i]);
+   Button b=new Button(this);b.setAllCaps(false);
+   b.setText(title+"\n"+displayValue(key,ble!=null?valueOf(ble.config,key):"?"));
+   b.setEnabled(editable);b.setAlpha(editable?1f:.45f);
    content.addView(b,new LinearLayout.LayoutParams(-1,dp(62)));
    b.setOnClickListener(v->editSetting(key,title,b));
   }
-  Button help=new Button(this);help.setAllCaps(false);help.setText("▸ Help and safety information");
+  Button help=new Button(this);help.setAllCaps(false);help.setText("▸ "+tr("Help & information"));
   content.addView(help,new LinearLayout.LayoutParams(-1,dp(52)));
-  TextView info=new TextView(this);info.setTextColor(Color.DKGRAY);info.setTextSize(14);
-  info.setText("NORMAL: steady green. ALARM: saved orange effect and buzzer. ALL OFF is allowed only when NORMAL is confirmed.\n\nBluetooth: the owning phone reconnects automatically. The prototype firmware reserves ownership for 30 minutes after connection loss, but is NOT yet cryptographically authenticated.\n\nFresh installation: if the controller still remembers an old owner, it will automatically release the reservation after 30 minutes without that owner. This app will reconnect automatically. Do not reset the device or remove app data while waiting.\n\nThis app is a bench-test prototype, not certified gas safety equipment. Never rely on BLE as the only warning path.");
+  TextView info=new TextView(this);info.setTextColor(Color.LTGRAY);info.setTextSize(14);
+  final String helpText="NORMAL: steady green. ALARM: saved orange effect and buzzer. ALL OFF is allowed only when NORMAL is confirmed.\n\nBluetooth: the owning phone reconnects automatically. The controller reserves ownership for up to 30 minutes after connection loss.\n\nAfter reinstalling the app, wait for the previous owner reservation to expire, or disconnect the previous app. The saved lighting settings remain in the controller.\n\nThe device is a visual and audible warning system, not a certified gas safety system.";
+  info.setText(tr(helpText));
   info.setPadding(dp(10),dp(8),dp(10),dp(12));info.setVisibility(View.GONE);
   content.addView(info);
-  Button licensing=new Button(this);
-  licensing.setAllCaps(false);
-  licensing.setText("🔑 Licentiebeheer · HB-Electronics.nl");
+  help.setOnClickListener(v->{
+   boolean show=info.getVisibility()!=View.VISIBLE;
+   info.setVisibility(show?View.VISIBLE:View.GONE);
+   help.setText((show?"▾ ":"▸ ")+tr("Help & information"));
+  });
+  TextView langTitle=new TextView(this);langTitle.setText(tr("Language"));
+  langTitle.setTextColor(Color.WHITE);langTitle.setTextSize(16);langTitle.setTypeface(null,Typeface.BOLD);
+  LinearLayout.LayoutParams langTitleLp=new LinearLayout.LayoutParams(-1,-2);
+  langTitleLp.topMargin=dp(18);
+  content.addView(langTitle,langTitleLp);
+  Spinner languages=new Spinner(this);
+  ArrayAdapter<String> languageAdapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,UiLanguage.OPTIONS);
+  languages.setAdapter(languageAdapter);
+  languages.setSelection(UiLanguage.selected(this));
+  content.addView(languages,new LinearLayout.LayoutParams(-1,dp(54)));
+  languages.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+   @Override public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){
+    if(position==UiLanguage.selected(MainActivity.this))return;
+    UiLanguage.save(MainActivity.this,position);
+    recreate();
+   }
+   @Override public void onNothingSelected(android.widget.AdapterView<?> parent){}
+  });
+  Button licensing=new Button(this);licensing.setAllCaps(false);
+  licensing.setText("🔑 "+tr("License management")+" · HB-Electronics.nl");
   LinearLayout.LayoutParams licenseLp=new LinearLayout.LayoutParams(-1,dp(60));
-  licenseLp.topMargin=dp(22);
+  licenseLp.topMargin=dp(18);
   content.addView(licensing,licenseLp);
   licensing.setOnClickListener(v->showLicenseManager());
-  help.setOnClickListener(v->{boolean show=info.getVisibility()!=View.VISIBLE;info.setVisibility(show?View.VISIBLE:View.GONE);help.setText(show?"▾ Help and safety information":"▸ Help and safety information");});
-  new AlertDialog.Builder(this).setTitle("HP Gas Alert System · Settings v5.0")
-   .setView(scroll).setPositiveButton("Close",null).show();
+  new AlertDialog.Builder(this).setTitle("HP Gas Alert System · "+tr("Settings")+" v5.0")
+   .setView(scroll).setPositiveButton(tr("Close"),null).show();
  }
  private void refreshLicenseLabel(){
   if(licenseStatus==null||licenseManager==null)return;
