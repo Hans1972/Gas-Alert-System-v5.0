@@ -316,27 +316,30 @@ public final class MainActivity extends Activity {
   content.setPadding(dp(20),dp(12),dp(20),dp(18));scroll.addView(content);
   String[] keys={"greenBrightness","leds","layout","effect","brightness","tint","speed","afterglow","colorMode","buzzerMode","buzzerSeconds","pulseOnMs","pulseOffMs"};
   String[] names={"Green brightness (%)","Number of physical LEDs","LED layout (0 single, 1 double, 2 matrix)","Orange effect (1–40)","Orange brightness (%)","Orange hue (0–100)","Animation speed (25–200%)","Afterglow (0–100)","Color order (0–5)","Buzzer (0 continuous, 1 pulsed)","Buzzer duration (seconds)","Pulse ON (milliseconds)","Pulse OFF (milliseconds)"};
+  // Advanced hardware controls stay hidden until General Settings is opened.
+  Button general=new Button(this);general.setAllCaps(false);
+  general.setText("▸ "+tr("General Settings"));
+  content.addView(general,new LinearLayout.LayoutParams(-1,dp(56)));
+  LinearLayout hardware=new LinearLayout(this);
+  hardware.setOrientation(LinearLayout.VERTICAL);
+  hardware.setVisibility(View.GONE);
+  hardware.setPadding(dp(8),dp(4),dp(8),dp(6));
+  content.addView(hardware,new LinearLayout.LayoutParams(-1,-2));
   boolean editable=licenseManager!=null&&licenseManager.hasValidLicense()&&ble!=null&&ble.ready;
   for(int i=0;i<keys.length;i++){
    final String key=keys[i],title=tr(names[i]);
-   Button b=new Button(this);b.setAllCaps(false);
-   b.setText(title+"\n"+displayValue(key,ble!=null?valueOf(ble.config,key):"?"));
-   b.setEnabled(editable);b.setAlpha(editable?1f:.45f);
-   content.addView(b,new LinearLayout.LayoutParams(-1,dp(62)));
-   b.setOnClickListener(v->editSetting(key,title,b));
+   Button settingButton=new Button(this);settingButton.setAllCaps(false);
+   settingButton.setText(title+"\n"+displayValue(key,ble!=null?valueOf(ble.config,key):"?"));
+   settingButton.setEnabled(editable);settingButton.setAlpha(editable?1f:.45f);
+   hardware.addView(settingButton,new LinearLayout.LayoutParams(-1,dp(62)));
+   settingButton.setOnClickListener(v->editSetting(key,title,settingButton));
   }
-  Button help=new Button(this);help.setAllCaps(false);help.setText("▸ "+tr("Help & information"));
-  content.addView(help,new LinearLayout.LayoutParams(-1,dp(52)));
-  TextView info=new TextView(this);info.setTextColor(Color.LTGRAY);info.setTextSize(14);
-  final String helpText="NORMAL: steady green. ALARM: saved orange effect and buzzer. ALL OFF is allowed only when NORMAL is confirmed.\n\nBluetooth: the owning phone reconnects automatically. The controller reserves ownership for up to 30 minutes after connection loss.\n\nAfter reinstalling the app, wait for the previous owner reservation to expire, or disconnect the previous app. The saved lighting settings remain in the controller.\n\nThe device is a visual and audible warning system, not a certified gas safety system.";
-  info.setText(tr(helpText));
-  info.setPadding(dp(10),dp(8),dp(10),dp(12));info.setVisibility(View.GONE);
-  content.addView(info);
-  help.setOnClickListener(v->{
-   boolean show=info.getVisibility()!=View.VISIBLE;
-   info.setVisibility(show?View.VISIBLE:View.GONE);
-   help.setText((show?"▾ ":"▸ ")+tr("Help & information"));
+  general.setOnClickListener(v->{
+   boolean expanded=hardware.getVisibility()!=View.VISIBLE;
+   hardware.setVisibility(expanded?View.VISIBLE:View.GONE);
+   general.setText((expanded?"▾ ":"▸ ")+tr("General Settings"));
   });
+
   TextView langTitle=new TextView(this);langTitle.setText(tr("Language"));
   langTitle.setTextColor(Color.WHITE);langTitle.setTextSize(16);langTitle.setTypeface(null,Typeface.BOLD);
   LinearLayout.LayoutParams langTitleLp=new LinearLayout.LayoutParams(-1,-2);
@@ -354,6 +357,18 @@ public final class MainActivity extends Activity {
     recreate();
    }
    @Override public void onNothingSelected(android.widget.AdapterView<?> parent){}
+  });
+  Button help=new Button(this);help.setAllCaps(false);help.setText("▸ "+tr("Help & information"));
+  content.addView(help,new LinearLayout.LayoutParams(-1,dp(52)));
+  TextView info=new TextView(this);info.setTextColor(Color.LTGRAY);info.setTextSize(14);
+  final String helpText="NORMAL: steady green. ALARM: saved orange effect and buzzer. ALL OFF is allowed only when NORMAL is confirmed.\n\nBluetooth: the owning phone reconnects automatically. The controller reserves ownership for up to 30 minutes after connection loss.\n\nAfter reinstalling the app, wait for the previous owner reservation to expire, or disconnect the previous app. The saved lighting settings remain in the controller.\n\nThe device is a visual and audible warning system, not a certified gas safety system.";
+  info.setText(tr(helpText));
+  info.setPadding(dp(10),dp(8),dp(10),dp(12));info.setVisibility(View.GONE);
+  content.addView(info);
+  help.setOnClickListener(v->{
+   boolean show=info.getVisibility()!=View.VISIBLE;
+   info.setVisibility(show?View.VISIBLE:View.GONE);
+   help.setText((show?"▾ ":"▸ ")+tr("Help & information"));
   });
   Button licensing=new Button(this);licensing.setAllCaps(false);
   licensing.setText("🔑 "+tr("License management")+" · HB-Electronics.nl");
