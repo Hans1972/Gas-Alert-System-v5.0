@@ -28,7 +28,11 @@ public final class MainActivity extends Activity {
  private LinearLayout root,page;
  private Button connect,gas,power,settings;
  private int lastPageColor=Integer.MIN_VALUE;
- private TextView connection,signal,status,detail;
+ private TextView connection,signal,status,detail,licenseStatus;
+ private HbLicenseManager licenseManager;
+ private boolean licenseChecking=false;
+ private long lastLicenseCheckAt=0L;
+ private static final long LICENSE_CHECK_INTERVAL_MS=30L*60L*1000L;
  private final HpBleService.Listener listener=()->render();
  private final ServiceConnection serviceConnection=new ServiceConnection(){
   @Override public void onServiceConnected(ComponentName name,IBinder binder){
@@ -73,6 +77,11 @@ public final class MainActivity extends Activity {
   });
   text("HP Gas Alert System",32).setTypeface(null,Typeface.BOLD);
   text("Version 5.0",15);
+  licenseManager=new HbLicenseManager(this);
+  licenseStatus=text("Licentiestatus controleren…",14);
+  licenseStatus.setPadding(dp(12),dp(8),dp(12),dp(8));
+  licenseStatus.setTypeface(null,Typeface.BOLD);
+  licenseStatus.setOnClickListener(v->showLicenseManager());
   connection=text("Bluetooth not connected",17);
   signal=text("Signal: unavailable (disconnected)",15);
   // Create button drawables once. Replacing them every animation frame causes
@@ -210,6 +219,7 @@ public final class MainActivity extends Activity {
    connection.setText(ble.message);detail.setText("Controller confirmed · state revision "+ble.revision);
   }
   signal.setText(ble==null?"Signal: unavailable (disconnected)":ble.signalLabel());
+  refreshLicenseLabel();
   gas.setEnabled(connected&&!ble.busy);
   power.setEnabled(connected&&!ble.busy&&"NORMAL".equals(m));
   power.setAlpha(power.isEnabled()?1f:.45f);
@@ -248,8 +258,28 @@ public final class MainActivity extends Activity {
   new AlertDialog.Builder(this).setTitle("HP Gas Alert System · Settings v5.0")
    .setView(scroll).setPositiveButton("Close",null).show();
  }
+ private void refreshLicenseLabel(){
+  if(licenseStatus==null||licenseManager==null)return;
+  String license=licenseManager.status();
+  boolean valid=license.startsWith("Licentie actief")||license.startsWith("Proefperiode actief");
+  licenseStatus.setText("🔑 "+license+" · tik voor licentiebeheer");
+  licenseStatus.setTextColor(valid?Color.rgb(190,255,203):Color.rgb(255,226,155));
+ }
+ private void checkLicenseOnStart(){
+  if(licenseManager==null||licenseChecking)return;
+  long now=SystemClock.elapsedRealtime();
+  if(lastLicenseCheckAt>0&&now-lastLicenseCheckAt<LICENSE_CHECK_INTERVAL_MS)return;
+  lastLicenseCheckAt=now;
+  licenseChecking=true;
+  if(!licenseManager.request("check","",(ok,message)->{
+   licenseChecking=false;
+   refreshLicenseLabel();
+  })){
+   licenseChecking=false;
+  }
+ }
  private void showLicenseManager(){
-  HbLicenseManager manager=new HbLicenseManager(this);
+  HbLicenseManager manager=licenseManager;
   LinearLayout layout=new LinearLayout(this);
   layout.setOrientation(LinearLayout.VERTICAL);
   layout.setPadding(dp(22),dp(16),dp(22),dp(10));
@@ -294,6 +324,7 @@ public final class MainActivity extends Activity {
      if(!dialog.isShowing())return;
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
      statusText.setText(manager.status());
+     refreshLicenseLabel();
      showLicenseNotice(ok,message);
     })){
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
@@ -318,6 +349,7 @@ public final class MainActivity extends Activity {
     if(!dialog.isShowing())return;
     running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
     statusText.setText(manager.status());
+    refreshLicenseLabel();
     if(!ok && manager.status().equals(lastKnown)){
      // A failed network request is not proof of revocation; make uncertainty clear.
      statusText.setText("Laatste bekende status: "+lastKnown+"\nOnline controle niet bevestigd.");
@@ -535,7 +567,12 @@ public final class MainActivity extends Activity {
     saveSettingWithFeedback(key,val,title,origin);
    }).show();
  }
- @Override protected void onStart(){super.onStart();bindService(new Intent(this,HpBleService.class),serviceConnection,BIND_AUTO_CREATE);h.post(refresher);}
+ @Override protected void onStart(){
+  super.onStart();
+  bindService(new Intent(this,HpBleService.class),serviceConnection,BIND_AUTO_CREATE);
+  h.post(refresher);
+  checkLicenseOnStart();
+}
  @Override protected void onStop(){
   super.onStop();h.removeCallbacks(refresher);stopScan();if(picker!=null)picker.dismiss();
   if(bound){ble.setListener(null);unbindService(serviceConnection);bound=false;ble=null;}
