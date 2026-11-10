@@ -294,7 +294,7 @@ public final class MainActivity extends Activity {
      if(!dialog.isShowing())return;
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
      statusText.setText(manager.status());
-     showSettingNotice(ok,"Licentiebeheer",message);
+     showLicenseNotice(ok,message);
     })){
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
      statusText.setText(manager.status());
@@ -358,6 +358,31 @@ public final class MainActivity extends Activity {
   content.addView(bodyText);
   AlertDialog popup=new AlertDialog.Builder(this)
    .setTitle(title).setView(content).setPositiveButton("OK",null).create();
+  popup.setOnShowListener(d->popup.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color));
+  popup.show();
+ }
+ private void showLicenseNotice(boolean success,String message){
+  if(isFinishing()||isDestroyed())return;
+  boolean revoked=!success&&message.startsWith("Deze licentie is ingetrokken");
+  int color=success?Color.rgb(42,169,103):Color.rgb(210,91,47);
+  LinearLayout content=new LinearLayout(this);
+  content.setOrientation(LinearLayout.VERTICAL);
+  content.setPadding(dp(24),dp(12),dp(24),dp(10));
+  TextView heading=new TextView(this);
+  heading.setText(success?"✓ Licentie gecontroleerd":revoked?"Licentie ingetrokken":"Licentiecontrole mislukt");
+  heading.setTextSize(19);
+  heading.setTypeface(null,Typeface.BOLD);
+  heading.setTextColor(color);
+  content.addView(heading);
+  TextView explanation=new TextView(this);
+  explanation.setText(message);
+  explanation.setTextColor(Color.WHITE);
+  explanation.setTextSize(15);
+  explanation.setPadding(0,dp(12),0,dp(6));
+  content.addView(explanation);
+  AlertDialog popup=new AlertDialog.Builder(this)
+   .setTitle("HB-Electronics · Licentiebeheer")
+   .setView(content).setPositiveButton("OK",null).create();
   popup.setOnShowListener(d->popup.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color));
   popup.show();
  }
