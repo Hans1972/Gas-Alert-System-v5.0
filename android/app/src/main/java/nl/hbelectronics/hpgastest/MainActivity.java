@@ -31,6 +31,8 @@ public final class MainActivity extends Activity {
  private TextView connection,signal,status,detail,licenseStatus;
  private HbLicenseManager licenseManager;
  private boolean licenseChecking=false;
+ private String licenseWarningShownFor="";
+ private AlertDialog licenseBlockedDialog;
  private long lastLicenseCheckAt=0L;
  private static final long LICENSE_CHECK_INTERVAL_MS=30L*60L*1000L;
  private final HpBleService.Listener listener=()->render();
@@ -91,6 +93,7 @@ public final class MainActivity extends Activity {
   gas=makeButton("HP GAS ALERT",225,27);gas.setTypeface(null,Typeface.BOLD);
   gas.setAutoSizeTextTypeUniformWithConfiguration(12,29,1,android.util.TypedValue.COMPLEX_UNIT_SP);
   gas.setOnClickListener(v->{
+   if(!allowLicensedControl())return;
    if(ble==null)return;
    if("NORMAL".equals(ble.mode))ble.command("ALARM");
    else if("ALARM".equals(ble.mode))ble.command("RESET");
@@ -101,13 +104,16 @@ public final class MainActivity extends Activity {
   detail=text("Connect to a Gas Alert v5.0 controller",15);detail.setGravity(Gravity.CENTER);
   power=makeButton("ALL LIGHTS OFF",55,16);
   power.setOnClickListener(v->{
+   if(!allowLicensedControl())return;
    if(ble==null||!"NORMAL".equals(ble.mode))return;
    new AlertDialog.Builder(this).setTitle("Turn all lights off?")
     .setMessage("This is only possible when the controller confirms NORMAL (green).")
     .setNegativeButton("Cancel",null).setPositiveButton("Turn off",(d,w)->{if(ble!=null)ble.command("OFF");}).show();
   });
   settings=makeButton("⚙ Settings / Help",55,16);
-  settings.setOnClickListener(v->showSettings());
+  settings.setOnClickListener(v->{
+   if(allowLicensedControl())showSettings();
+  });
   gas.setBackground(rounded(Color.argb(78,255,255,255)));
   power.setBackground(rounded(Color.argb(45,255,255,255)));
   settings.setBackground(rounded(Color.argb(35,255,255,255)));
@@ -117,7 +123,7 @@ public final class MainActivity extends Activity {
   render();
   // A clean install has a new phone token; controller ownership from a removed
   // installation cannot safely be overridden by Bluetooth alone.
-  if(!getPreferences(MODE_PRIVATE).getBoolean("fresh_install_hint_shown",false)){
+  if(false && !getPreferences(MODE_PRIVATE).getBoolean("fresh_install_hint_shown",false)){
    getPreferences(MODE_PRIVATE).edit().putBoolean("fresh_install_hint_shown",true).apply();
    h.post(()->new AlertDialog.Builder(this)
     .setTitle("Fresh installation · v5.0")
@@ -132,6 +138,10 @@ public final class MainActivity extends Activity {
  private boolean permitted(){return checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)==PackageManager.PERMISSION_GRANTED
    &&checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)==PackageManager.PERMISSION_GRANTED;}
  private void connectClicked(){
+  // An existing owner can always disconnect/release the controller.
+  if(ble==null||!ble.hasSelection()){
+   if(!allowLicensedControl())return;
+  }
   if(ble!=null&&ble.hasSelection()){
    if(!ble.ready){
     new AlertDialog.Builder(this).setTitle("Controller not connected")
@@ -220,16 +230,17 @@ public final class MainActivity extends Activity {
   }
   signal.setText(ble==null?"Signal: unavailable (disconnected)":ble.signalLabel());
   refreshLicenseLabel();
-  gas.setEnabled(connected&&!ble.busy);
-  power.setEnabled(connected&&!ble.busy&&"NORMAL".equals(m));
+  boolean licenseOk=licenseManager!=null&&licenseManager.hasValidLicense();
+  gas.setEnabled(licenseOk&&connected&&!ble.busy);
+  power.setEnabled(licenseOk&&connected&&!ble.busy&&"NORMAL".equals(m));
   power.setAlpha(power.isEnabled()?1f:.45f);
   connect.setText(ble!=null&&ble.hasSelection()?"Disconnect / Change device":scanning?"Scanning…":"Connect Bluetooth");
-  connect.setEnabled(!scanning);
-  settings.setEnabled(connected&&!ble.busy);
+  connect.setEnabled(!scanning&&(licenseOk||(ble!=null&&ble.hasSelection())));
+  settings.setEnabled(licenseOk&&connected&&!ble.busy);
   settings.setAlpha(settings.isEnabled()?1f:.5f);
  }
  private void showSettings(){
-  if(ble==null||!ble.ready)return;
+  if(!allowLicensedControl()||ble==null||!ble.ready)return;
   ScrollView scroll=new ScrollView(this);
   LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
   content.setPadding(dp(20),dp(12),dp(20),dp(18));scroll.addView(content);
@@ -264,6 +275,8 @@ public final class MainActivity extends Activity {
   boolean valid=license.startsWith("Licentie actief")||license.startsWith("Proefperiode actief");
   licenseStatus.setText("🔑 "+license+" · tik voor licentiebeheer");
   licenseStatus.setTextColor(valid?Color.rgb(190,255,203):Color.rgb(255,226,155));
+  licenseStatus.setBackground(rounded(valid?Color.argb(90,20,99,48):Color.argb(235,130,28,34)));
+  renderLicenseAccess();
  }
  private void checkLicenseOnStart(){
   if(licenseManager==null||licenseChecking)return;
@@ -274,9 +287,54 @@ public final class MainActivity extends Activity {
   if(!licenseManager.request("check","",(ok,message)->{
    licenseChecking=false;
    refreshLicenseLabel();
+   render();
   })){
    licenseChecking=false;
   }
+ }
+ private boolean allowLicensedControl(){
+  if(licenseManager!=null&&licenseManager.hasValidLicense())return true;
+  showLicenseBlocked();
+  return false;
+ }
+ private void openLicenseShop(){
+  try{
+   startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://hb-electronics.nl/")));
+  }catch(Exception ex){
+   Toast.makeText(this,"Kan de HB-Electronics webshop niet openen.",Toast.LENGTH_LONG).show();
+  }
+ }
+ private void showLicenseBlocked(){
+  if(isFinishing()||isDestroyed()||licenseManager==null||licenseManager.hasValidLicense())return;
+  if(licenseBlockedDialog!=null&&licenseBlockedDialog.isShowing())return;
+  String state=licenseManager.status();
+  licenseWarningShownFor=state;
+  String explanation="De bediening van de lamp en de instellingen zijn geblokkeerd.\n\n"
+    +"Status: "+state+"\n\n"
+    +"Activeer een geldige licentie, start een beschikbare proefperiode of koop een licentie bij HB-Electronics.";
+  AlertDialog dialog=new AlertDialog.Builder(this)
+   .setTitle("Licentie vereist · HP Gas Alert v5.0")
+   .setMessage(explanation)
+   .setPositiveButton("Licentie activeren",(d,w)->showLicenseManager())
+   .setNeutralButton("Licentie kopen",(d,w)->openLicenseShop())
+   .setNegativeButton("Sluiten",null).create();
+  licenseBlockedDialog=dialog;
+  dialog.setOnShowListener(d->{
+   dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.rgb(72,189,125));
+   dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.rgb(240,190,83));
+  });
+  dialog.show();
+ }
+ private void renderLicenseAccess(){
+  if(licenseManager==null)return;
+  if(licenseManager.hasValidLicense()){
+   licenseWarningShownFor="";
+   if(licenseBlockedDialog!=null&&licenseBlockedDialog.isShowing())licenseBlockedDialog.dismiss();
+   return;
+  }
+  final String state=licenseManager.status();
+  if(!state.equals(licenseWarningShownFor))
+   h.post(this::showLicenseBlocked);
  }
  private void showLicenseManager(){
   HbLicenseManager manager=licenseManager;
@@ -303,6 +361,9 @@ public final class MainActivity extends Activity {
   layout.addView(trial);
   Button check=new Button(this);check.setAllCaps(false);check.setText("Licentie controleren");
   layout.addView(check);
+  Button buy=new Button(this);buy.setAllCaps(false);buy.setText("Licentie kopen bij HB-Electronics.nl");
+  layout.addView(buy);
+  buy.setOnClickListener(v->openLicenseShop());
   TextView note=new TextView(this);note.setTextColor(Color.LTGRAY);note.setTextSize(13);
   note.setText("De licentie hoort bij deze Android-app, niet bij de ESP32-C3. Licentiecontrole verandert nooit de alarmstatus of BLE-verbinding.");
   note.setPadding(0,dp(12),0,0);layout.addView(note);
@@ -325,6 +386,7 @@ public final class MainActivity extends Activity {
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
      statusText.setText(manager.status());
      refreshLicenseLabel();
+     render();
      showLicenseNotice(ok,message);
     })){
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
@@ -350,6 +412,7 @@ public final class MainActivity extends Activity {
     running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
     statusText.setText(manager.status());
     refreshLicenseLabel();
+    render();
     if(!ok && manager.status().equals(lastKnown)){
      // A failed network request is not proof of revocation; make uncertainty clear.
      statusText.setText("Laatste bekende status: "+lastKnown+"\nOnline controle niet bevestigd.");
@@ -459,7 +522,7 @@ public final class MainActivity extends Activity {
   return accepted;
  }
  private void editSetting(String key,String title,Button origin){
-  if(ble==null||!ble.ready)return;
+  if(!allowLicensedControl()||ble==null||!ble.ready)return;
   if(!"NORMAL".equals(ble.mode)){
    showSettingNotice(false,title,"Settings are blocked while the orange alarm is active. Reset the alarm to NORMAL (green) before changing settings.");
    return;
