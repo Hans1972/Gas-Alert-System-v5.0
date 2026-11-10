@@ -81,7 +81,8 @@ public final class HpBleService extends Service {
   return null;
  }
  public boolean saveSetting(String key,String value,SaveCallback cb){
-  if(cb==null||key==null||value==null||saveCallback!=null||releasePending||!ready||!authorized||!"NORMAL".equals(mode))return false;
+  if(cb==null||key==null||value==null||saveCallback!=null||releasePending||!ready||!authorized||!"NORMAL".equals(mode)
+     ||!new HbLicenseManager(this).hasValidLicense())return false;
   // No concurrent queued settings/preview commands during verified readback.
   sendQueue.removeIf(q->q.startsWith("PREVIEW "));
   saveCallback=cb;saveKey=key;saveValue=value;saveCommand="SET "+key+"="+value;
@@ -496,6 +497,9 @@ public final class HpBleService extends Service {
  };
  public boolean command(String cmd){
   if(!ready||revision<0||saveCallback!=null)return false;
+  // License check is enforced in the BLE service, not only in the UI.
+  // CANCEL is allowed to roll back a temporary preview after a revocation.
+  if(!"CANCEL".equals(cmd)&&!new HbLicenseManager(this).hasValidLicense())return false;
   String m=mode;
   boolean ok= (cmd.equals("ALARM")&&m.equals("NORMAL"))
     ||(cmd.equals("RESET")&&m.equals("ALARM"))
@@ -517,6 +521,12 @@ public final class HpBleService extends Service {
  private void drain(){
   if(writing||reading||subscribing||!ready||gatt==null||commandCharacteristic==null||!permitted())return;
   String cmd=sendQueue.poll();if(cmd==null)return;
+  if(!"RELEASE".equals(cmd)&&!"CANCEL".equals(cmd)&&!new HbLicenseManager(this).hasValidLicense()){
+   if(saveCallback!=null&&cmd.equals(saveCommand))finishSave(false,"Licentie niet geldig. Instelling niet opgeslagen.");
+   sendQueue.clear();
+   message="Licentie vereist · bediening geblokkeerd";signal();
+   return;
+  }
   writingCommand=cmd;
   writing=true;busy=true;message="Sending "+cmd.split(" ")[0]+"…";signal();
   byte[] payload=cmd.getBytes(StandardCharsets.UTF_8);
