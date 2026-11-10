@@ -178,26 +178,63 @@ public final class MainActivity extends Activity {
  }
  @Override public void onRequestPermissionsResult(int r,String[] p,int[] g){super.onRequestPermissionsResult(r,p,g);if(r==10&&permitted())connectClicked();}
  @Override protected void onActivityResult(int r,int result,Intent data){super.onActivityResult(r,result,data);if(r==11&&adapter!=null&&adapter.isEnabled())scan();}
+ private String bleName(ScanResult result){
+  if(result==null)return "";
+  ScanRecord record=result.getScanRecord();
+  String fromRecord=record==null?null:record.getDeviceName();
+  if(fromRecord!=null&&!fromRecord.trim().isEmpty())return fromRecord.trim();
+  if(permitted()){
+   try{
+    String fromDevice=result.getDevice().getName();
+    if(fromDevice!=null)return fromDevice.trim();
+   }catch(SecurityException ignored){}
+  }
+  return "";
+ }
+ private boolean isGasAlertController(ScanResult result){
+  if(result==null||result.getDevice()==null)return false;
+  ScanRecord record=result.getScanRecord();
+  if(record!=null){
+   List<ParcelUuid> uuids=record.getServiceUuids();
+   if(uuids!=null&&uuids.contains(new ParcelUuid(HpBleService.SERVICE)))return true;
+  }
+  String name=bleName(result).toLowerCase(Locale.ROOT);
+  return name.contains("hp gas alert")||name.contains("gas alert system");
+ }
  private void scan(){
   if(scanning||adapter==null||!permitted())return;
-  scanner=adapter.getBluetoothLeScanner();if(scanner==null)return;
+  scanner=adapter.getBluetoothLeScanner();
+  if(scanner==null){
+   new AlertDialog.Builder(this).setTitle("Bluetooth niet beschikbaar")
+    .setMessage("Schakel Bluetooth in en probeer opnieuw.").setPositiveButton("OK",null).show();
+   return;
+  }
   devices.clear();labels.clear();
   listAdapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,labels);
-  picker=new AlertDialog.Builder(this).setTitle("Select HP Gas Alert v5.0 controller")
+  picker=new AlertDialog.Builder(this).setTitle("Zoek HP Gas Alert-controller")
+   .setMessage("Zoeken naar de ESP32-C3…\n\nZorg dat de controller is ingeschakeld en niet verbonden is met de oude v3-app.")
    .setAdapter(listAdapter,(d,index)->{
     BluetoothDevice device=devices.get(index);stopScan();
     Intent i=new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_CONNECT)
      .putExtra(HpBleService.EXTRA_ADDRESS,device.getAddress())
      .putExtra(HpBleService.EXTRA_NAME,"HP Gas Alert System v5.0");
     startForegroundService(i);
-   }).setNegativeButton("Cancel",(d,w)->stopScan()).create();
+   }).setNeutralButton("Opnieuw zoeken",(d,w)->{
+    stopScan();h.postDelayed(this::scan,300);
+   }).setNegativeButton("Sluiten",(d,w)->stopScan()).create();
   picker.setOnDismissListener(d->stopScan());picker.show();
   try{
-   scanning=true;scanner.startScan(
-    Collections.singletonList(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(HpBleService.SERVICE)).build()),
+   scanning=true;
+   // Unfiltered scan: the 128-bit service UUID can appear in the scan response
+   // instead of the primary advertisement on some ESP32/Android combinations.
+   // UI performs a strict service-or-device-name check before listing devices.
+   scanner.startScan(null,
     new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),scanCallback);
    h.postDelayed(scanEnd,15000);
-  }catch(Exception e){stopScan();connection.setText("Bluetooth scan failed");}
+  }catch(Exception e){
+   stopScan();
+   if(picker!=null&&picker.isShowing())picker.setMessage("Bluetooth zoeken mislukt. Controleer de machtigingen en probeer opnieuw.");
+  }
  }
  private void stopScan(){
   h.removeCallbacks(scanEnd);
@@ -206,13 +243,20 @@ public final class MainActivity extends Activity {
  }
  private final ScanCallback scanCallback=new ScanCallback(){
   @Override public void onScanResult(int type,ScanResult result){h.post(()->{
-   if(!scanning||result==null||result.getDevice()==null)return;
+   if(!scanning||!isGasAlertController(result))return;
    BluetoothDevice d=result.getDevice();
    for(BluetoothDevice x:devices)if(x.getAddress().equals(d.getAddress()))return;
-   devices.add(d);labels.add("HP Gas Alert System v5.0  ·  "+result.getRssi()+" dBm");
+   devices.add(d);
+   String displayName=bleName(result);
+   if(displayName.isEmpty())displayName="HP Gas Alert controller";
+   labels.add(displayName+" · "+result.getRssi()+" dBm");
    listAdapter.notifyDataSetChanged();
+   if(picker!=null&&picker.isShowing())picker.setMessage("Selecteer de gevonden controller:");
   });}
-  @Override public void onScanFailed(int code){h.post(()->{stopScan();connection.setText("Scan error "+code);});}
+  @Override public void onScanFailed(int code){h.post(()->{
+   stopScan();
+   if(picker!=null&&picker.isShowing())picker.setMessage("Scan mislukt (code "+code+"). Sluit v3.0, controleer Bluetooth en probeer 'Opnieuw zoeken'.");
+  });}
  };
  private GradientDrawable rounded(int argb){
   GradientDrawable d=new GradientDrawable();d.setColor(argb);d.setCornerRadius(dp(22));
