@@ -182,6 +182,11 @@ public final class UiLanguage {
   add("BLE read error","BLE-leesfout","BLE-Lesefehler","Erreur de lecture BLE");
   add("BLE write failed","BLE-schrijffout","BLE-Schreibfehler","Échec d’écriture BLE");
   add("Unable to send command","Commando verzenden mislukt","Befehl konnte nicht gesendet werden","Impossible d’envoyer la commande");
+  add("Reconnecting to selected controller…","Opnieuw verbinding maken met geselecteerde controller…","Erneute Verbindung zum ausgewählten Controller…","Reconnexion au contrôleur sélectionné…");
+  add("Resetting Bluetooth selection.","Bluetooth-selectie opnieuw instellen.","Bluetooth-Auswahl zurücksetzen.","Réinitialisation de la sélection Bluetooth.");
+  add("Saved Bluetooth selection cleared. Select the controller again.","Opgeslagen Bluetooth-selectie gewist. Kies de controller opnieuw.","Gespeicherte Bluetooth-Auswahl gelöscht. Controller erneut auswählen.","Sélection Bluetooth effacée. Sélectionnez à nouveau le contrôleur.");
+  add("Invalid license. Setting not saved.","Licentie niet geldig. Instelling niet opgeslagen.","Ungültige Lizenz. Einstellung nicht gespeichert.","Licence invalide. Paramètre non enregistré.");
+  add("License required · controls locked","Licentie vereist · bediening geblokkeerd","Lizenz erforderlich · Steuerung gesperrt","Licence requise · commandes bloquées");
  }
  public static String code(Context context){
   String code=context.getSharedPreferences("ui_preferences",Context.MODE_PRIVATE).getString("language","en");
@@ -269,6 +274,11 @@ public final class UiLanguage {
   if(message.startsWith("Owner release failed ("))return t(c,"Owner release failed");
   if(message.startsWith("Unable to send command ("))return t(c,"Unable to send command");
   if(message.startsWith("Sending "))return t(c,"Sending")+" "+message.substring(8);
+  if(message.equals("Opnieuw verbinding maken met geselecteerde controller…"))return t(c,"Reconnecting to selected controller…");
+  if(message.equals("Bluetooth-selectie opnieuw instellen."))return t(c,"Resetting Bluetooth selection.");
+  if(message.equals("Opgeslagen Bluetooth-selectie gewist. Kies de controller opnieuw."))return t(c,"Saved Bluetooth selection cleared. Select the controller again.");
+  if(message.equals("Licentie niet geldig. Instelling niet opgeslagen."))return t(c,"Invalid license. Setting not saved.");
+  if(message.equals("Licentie vereist · bediening geblokkeerd"))return t(c,"License required · controls locked");
   if(message.startsWith("Licentie niet geldig."))return t(c,"License invalid. Setting not saved.");
   if(message.startsWith("Licentie vereist"))return t(c,"License required · control locked");
   return t(c,message);
