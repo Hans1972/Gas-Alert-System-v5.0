@@ -302,7 +302,7 @@ public final class MainActivity extends Activity {
    if("ALARM".equals(m)){gas.setText("HP GAS ALERT ON\nTAP TO RESET");status.setText("ALARM · ORANGE");}
    else if("NORMAL".equals(m)){gas.setText("HP GAS ALERT OFF\nTAP TO START");status.setText("NORMAL · GREEN");}
    else{gas.setText("LIGHTS OFF\nTAP TO TURN ON");status.setText("OFF");}
-   connection.setText(ble.message);detail.setText("Controller confirmed · state revision "+ble.revision);
+   connection.setText(ble.message);detail.setText("");
   }
   signal.setText(ble==null?"Signal: unavailable (disconnected)":ble.signalLabel());
   refreshLicenseLabel();
@@ -450,9 +450,6 @@ public final class MainActivity extends Activity {
   Button buy=new Button(this);buy.setAllCaps(false);buy.setText("Licentie kopen bij HB-Electronics.nl");
   layout.addView(buy);
   buy.setOnClickListener(v->openLicenseShop());
-  TextView note=new TextView(this);note.setTextColor(Color.LTGRAY);note.setTextSize(13);
-  note.setText("De licentie hoort bij deze Android-app, niet bij de ESP32-C3. Licentiecontrole verandert nooit de alarmstatus of BLE-verbinding.");
-  note.setPadding(0,dp(12),0,0);layout.addView(note);
   final boolean[] running={false};
   final AlertDialog dialog=new AlertDialog.Builder(this)
    .setTitle("Licentiebeheer · v5.0")
