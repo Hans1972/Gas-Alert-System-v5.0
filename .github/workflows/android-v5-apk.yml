@@ -31,7 +31,7 @@ jobs:
       - name: Verify all displayed and build versions equal 5.0
         run: |
           grep -q "versionName '5.0'" android/app/build.gradle
-          grep -q 'Version 5.0' android/app/src/main/java/nl/hbelectronics/hpgastest/MainActivity.java
+          grep -q 'text(tr("Version")+" 5.0"' android/app/src/main/java/nl/hbelectronics/hpgastest/MainActivity.java
           grep -q 'HP Gas Alert v5.0' android/app/src/main/AndroidManifest.xml
           if grep -R -n -E '(Version 1\\.[0-9]|v1\\.[0-9]|versionName.*1\\.)' android/app/src/main android/app/build.gradle; then
             echo "ERROR: old 1.x version label found"; exit 1
