@@ -529,16 +529,16 @@ public final class MainActivity extends Activity {
   return "?";
  }
  private String displayValue(String key,String raw){
-  if(raw==null||"?".equals(raw)||raw.isEmpty())return "Value unavailable";
+  if(raw==null||"?".equals(raw)||raw.isEmpty())return tr("Value unavailable");
   switch(key){
    case "greenBrightness":case "brightness":case "tint":case "afterglow":case "speed":
     return raw+"%";
    case "buzzerSeconds":return raw+" s";
    case "pulseOnMs":case "pulseOffMs":return raw+" ms";
-   case "effect":return "Effect "+raw+" / 40";
-   case "leds":return raw+" LEDs";
-   case "layout":return "0".equals(raw)?"Single":"1".equals(raw)?"Double mirrored":"8 × 32 matrix";
-   case "buzzerMode":return "0".equals(raw)?"Continuous":"Pulsed";
+   case "effect":return tr("Effect")+" "+raw+" / 40";
+   case "leds":return raw+" "+tr("LEDs");
+   case "layout":return "0".equals(raw)?tr("Single"):"1".equals(raw)?tr("Double mirrored"):tr("8 × 32 matrix");
+   case "buzzerMode":return "0".equals(raw)?tr("Continuous"):tr("Pulsed");
    default:return raw;
   }
  }
@@ -562,7 +562,7 @@ public final class MainActivity extends Activity {
   content.setOrientation(LinearLayout.VERTICAL);
   content.setPadding(dp(24),dp(12),dp(24),dp(10));
   TextView heading=new TextView(this);
-  heading.setText(success?"✓ Saved successfully":"Setting not saved");
+  heading.setText(success?tr("✓ Saved successfully"):tr("Setting not saved"));
   heading.setTextSize(19);heading.setTypeface(null,Typeface.BOLD);
   heading.setTextColor(color);
   content.addView(heading);
@@ -584,47 +584,47 @@ public final class MainActivity extends Activity {
   content.setOrientation(LinearLayout.VERTICAL);
   content.setPadding(dp(24),dp(12),dp(24),dp(10));
   TextView heading=new TextView(this);
-  heading.setText(success?"✓ Licentie gecontroleerd":revoked?"Licentie ingetrokken":"Licentiecontrole mislukt");
+  heading.setText(success?"✓ "+tr("License checked"):revoked?tr("License revoked"):tr("License check failed"));
   heading.setTextSize(19);
   heading.setTypeface(null,Typeface.BOLD);
   heading.setTextColor(color);
   content.addView(heading);
   TextView explanation=new TextView(this);
-  explanation.setText(message);
+  explanation.setText(UiLanguage.licenseMessage(this,message));
   explanation.setTextColor(Color.WHITE);
   explanation.setTextSize(15);
   explanation.setPadding(0,dp(12),0,dp(6));
   content.addView(explanation);
   AlertDialog popup=new AlertDialog.Builder(this)
-   .setTitle("HB-Electronics · Licentiebeheer")
+   .setTitle("HB-Electronics · "+tr("License management"))
    .setView(content).setPositiveButton("OK",null).create();
   popup.setOnShowListener(d->popup.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color));
   popup.show();
  }
  private boolean saveSettingWithFeedback(String key,String raw,String title,Button origin){
   if(ble==null||!ble.ready){
-   showSettingNotice(false,title,"Controller is not connected.");
+   showSettingNotice(false,title,tr("Controller is not connected."));
    return false;
   }
   if(!"NORMAL".equals(ble.mode)){
-   showSettingNotice(false,title,"Settings can only be changed in NORMAL (green). Reset the orange alarm first.");
+   showSettingNotice(false,title,tr("Settings can only be changed in NORMAL (green). Reset the orange alarm first."));
    return false;
   }
   boolean accepted=ble.saveSetting(key,raw,(confirmed,detail)->runOnUiThread(()->{
    if(confirmed){
     origin.setText(title+"\n"+displayValue(key,raw));
-    showSettingNotice(true,title,"The controller confirmed "+displayValue(key,raw)+" in NORMAL (green).");
+    showSettingNotice(true,title,tr("The controller confirmed the setting in NORMAL (green).")+" "+displayValue(key,raw));
    }else{
     showSettingNotice(false,title,detail);
    }
   }));
-  if(!accepted)showSettingNotice(false,title,"Controller busy or not ready to save. Please retry.");
+  if(!accepted)showSettingNotice(false,title,tr("Controller busy or not ready to save. Please retry."));
   return accepted;
  }
  private void editSetting(String key,String title,Button origin){
   if(!allowLicensedControl()||ble==null||!ble.ready)return;
   if(!"NORMAL".equals(ble.mode)){
-   showSettingNotice(false,title,"Settings are blocked while the orange alarm is active. Reset the alarm to NORMAL (green) before changing settings.");
+   showSettingNotice(false,title,tr("Settings are blocked while the orange alarm is active. Reset the alarm to NORMAL (green) before changing settings."));
    return;
   }
   int[] range=sliderRange(key);
@@ -640,7 +640,7 @@ public final class MainActivity extends Activity {
    valueRow.setOrientation(LinearLayout.HORIZONTAL);
    valueRow.setGravity(Gravity.CENTER_VERTICAL);
    TextView hint=new TextView(this);
-   hint.setText("Selected value");
+   hint.setText(tr("Selected value"));
    hint.setTextSize(13);
    hint.setTextColor(Color.LTGRAY);
    hint.setGravity(Gravity.CENTER_VERTICAL);
@@ -650,7 +650,7 @@ public final class MainActivity extends Activity {
    value.setTypeface(null,Typeface.BOLD);
    value.setTextColor(Color.WHITE);
    value.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
-   value.setContentDescription("Selected slider value");
+   value.setContentDescription(tr("Selected value"));
    valueRow.addView(value,new LinearLayout.LayoutParams(-2,dp(42)));
    layout.addView(valueRow,new LinearLayout.LayoutParams(-1,dp(44)));
    SeekBar slider=new SeekBar(this);
@@ -691,11 +691,11 @@ public final class MainActivity extends Activity {
    });
    // Value and slider views already added in the compact row above.
    AlertDialog dialog=new AlertDialog.Builder(this).setTitle(title).setView(layout)
-    .setNegativeButton("Cancel",(d,w)->{
+    .setNegativeButton(tr("Cancel"),(d,w)->{
      if(pending[0]!=null)h.removeCallbacks(pending[0]);
      if(ble!=null)ble.command("CANCEL");
     })
-    .setPositiveButton("Save",(d,w)->{
+    .setPositiveButton(tr("Save"),(d,w)->{
      if(pending[0]!=null)h.removeCallbacks(pending[0]);
      int selected=minValue+slider.getProgress()*stepValue;
      saved[0]=saveSettingWithFeedback(key,String.valueOf(selected),title,origin);
@@ -710,23 +710,23 @@ public final class MainActivity extends Activity {
   }
   if("layout".equals(key)||"colorMode".equals(key)||"buzzerMode".equals(key)){
    final String[] labels;
-   if("layout".equals(key))labels=new String[]{"Single strip","Double mirrored strip","8 × 32 matrix"};
-   else if("buzzerMode".equals(key))labels=new String[]{"Continuous","Pulsed"};
+   if("layout".equals(key))labels=new String[]{tr("Single strip"),tr("Double mirrored strip"),tr("8 × 32 matrix")};
+   else if("buzzerMode".equals(key))labels=new String[]{tr("Continuous"),tr("Pulsed")};
    else labels=new String[]{"GRB","RGB","RBG","GBR","BRG","BGR"};
    int current=0;try{current=Integer.parseInt(valueOf(ble.config,key));}catch(Exception ignored){}
    current=Math.max(0,Math.min(labels.length-1,current));
    new AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(labels,current,(d,which)->{
     d.dismiss();
     saveSettingWithFeedback(key,String.valueOf(which),title,origin);
-   }).setNegativeButton("Cancel",null).show();
+   }).setNegativeButton(tr("Cancel"),null).show();
    return;
   }
   EditText edit=new EditText(this);edit.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
   String initial=valueOf(ble.config,key);if(!"?".equals(initial))edit.setText(initial);
   new AlertDialog.Builder(this).setTitle(title).setView(edit)
-   .setNegativeButton("Cancel",null).setPositiveButton("Save",(d,w)->{
+   .setNegativeButton(tr("Cancel"),null).setPositiveButton(tr("Save"),(d,w)->{
     String val=edit.getText().toString().trim();
-    if(!val.matches("[0-9]{1,5}")){Toast.makeText(this,"Enter a valid number",Toast.LENGTH_LONG).show();return;}
+    if(!val.matches("[0-9]{1,5}")){Toast.makeText(this,tr("Enter a valid number"),Toast.LENGTH_LONG).show();return;}
     saveSettingWithFeedback(key,val,title,origin);
    }).show();
  }
