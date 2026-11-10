@@ -86,6 +86,17 @@ public final class HbLicenseManager {
   if(!"trial".equals(type)&&!"paid".equals(type))throw new SecurityException("Invalid license category");
   return claims;
  }
+ /** Only a correctly signed, still-valid proof authorizes app controls.
+  * Definitive server revocations override any cached offline proof. */
+ public boolean hasValidLicense(){
+  String state=prefs.getString("server_status","");
+  if("revoked".equals(state)||"blocked".equals(state)||"expired".equals(state)
+      ||"recovery_required".equals(state)||"invalid_license".equals(state))return false;
+  String proof=prefs.getString("proof","");
+  if(proof.isEmpty())return false;
+  try{validated(proof);return true;}
+  catch(Exception e){return false;}
+ }
  public String status(){
   String serverStatus=prefs.getString("server_status","");
   if("revoked".equals(serverStatus))return "Licentie ingetrokken";
