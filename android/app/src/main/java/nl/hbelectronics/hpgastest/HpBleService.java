@@ -177,7 +177,7 @@ public final class HpBleService extends Service {
   PendingIntent intent=PendingIntent.getActivity(this,0,open,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
   return new Notification.Builder(this,CHANNEL).setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
     .setContentTitle("HP Gas Alert System v5.0")
-    .setContentText(ready?"Bluetooth connected":active?"Bluetooth reconnecting":"Bluetooth disconnected")
+    .setContentText(UiLanguage.t(this,ready?"Bluetooth connected":active?"Bluetooth reconnecting":"Bluetooth disconnected"))
     .setContentIntent(intent).setOngoing(active).build();
  }
  private void foreground(){
