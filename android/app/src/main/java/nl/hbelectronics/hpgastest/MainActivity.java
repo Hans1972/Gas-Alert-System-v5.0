@@ -44,7 +44,15 @@ public final class MainActivity extends Activity {
   }
   @Override public void onServiceDisconnected(ComponentName name){ble=null;bound=false;render();}
  };
- private final Runnable scanEnd=()->stopScan();
+ private final Runnable scanEnd=()->{
+  stopScan();
+  if(devices.isEmpty()&&picker!=null&&picker.isShowing()&&listAdapter!=null){
+   labels.clear();
+   labels.add("Geen controller gevonden. Controleer de ESP32-C3 en sluit de v3-app.");
+   labels.add("Kies 'Opnieuw zoeken' om nogmaals te scannen.");
+   listAdapter.notifyDataSetChanged();
+  }
+ };
  // Aligned animation tick: 500 ms blink phases must not be sampled every 600 ms.
  private static final long BLINK_HALF_PERIOD_MS=500L;
  private final Runnable refresher=new Runnable(){@Override public void run(){
@@ -210,10 +218,11 @@ public final class MainActivity extends Activity {
    return;
   }
   devices.clear();labels.clear();
+  labels.add("Zoeken naar HP Gas Alert-controller…");
   listAdapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,labels);
   picker=new AlertDialog.Builder(this).setTitle("Zoek HP Gas Alert-controller")
-   .setMessage("Zoeken naar de ESP32-C3…\n\nZorg dat de controller is ingeschakeld en niet verbonden is met de oude v3-app.")
    .setAdapter(listAdapter,(d,index)->{
+    if(index<0||index>=devices.size())return;
     BluetoothDevice device=devices.get(index);stopScan();
     Intent i=new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_CONNECT)
      .putExtra(HpBleService.EXTRA_ADDRESS,device.getAddress())
@@ -233,7 +242,10 @@ public final class MainActivity extends Activity {
    h.postDelayed(scanEnd,15000);
   }catch(Exception e){
    stopScan();
-   if(picker!=null&&picker.isShowing())picker.setMessage("Bluetooth zoeken mislukt. Controleer de machtigingen en probeer opnieuw.");
+   if(picker!=null&&picker.isShowing()){
+    labels.clear();labels.add("Bluetooth zoeken mislukt. Kies 'Opnieuw zoeken'.");
+    listAdapter.notifyDataSetChanged();
+   }
   }
  }
  private void stopScan(){
@@ -246,16 +258,20 @@ public final class MainActivity extends Activity {
    if(!scanning||!isGasAlertController(result))return;
    BluetoothDevice d=result.getDevice();
    for(BluetoothDevice x:devices)if(x.getAddress().equals(d.getAddress()))return;
+   if(devices.isEmpty())labels.clear();
    devices.add(d);
    String displayName=bleName(result);
    if(displayName.isEmpty())displayName="HP Gas Alert controller";
    labels.add(displayName+" · "+result.getRssi()+" dBm");
    listAdapter.notifyDataSetChanged();
-   if(picker!=null&&picker.isShowing())picker.setMessage("Selecteer de gevonden controller:");
+
   });}
   @Override public void onScanFailed(int code){h.post(()->{
    stopScan();
-   if(picker!=null&&picker.isShowing())picker.setMessage("Scan mislukt (code "+code+"). Sluit v3.0, controleer Bluetooth en probeer 'Opnieuw zoeken'.");
+   if(picker!=null&&picker.isShowing()){
+    labels.clear();labels.add("Scan mislukt (code "+code+"). Kies 'Opnieuw zoeken'.");
+    listAdapter.notifyDataSetChanged();
+   }
   });}
  };
  private GradientDrawable rounded(int argb){
