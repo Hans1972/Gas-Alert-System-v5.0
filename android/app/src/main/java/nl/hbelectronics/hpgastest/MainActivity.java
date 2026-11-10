@@ -147,9 +147,22 @@ public final class MainActivity extends Activity {
   }
   if(ble!=null&&ble.hasSelection()){
    if(!ble.ready){
-    new AlertDialog.Builder(this).setTitle("Controller not connected")
-     .setMessage("The controller must be connected to release ownership. Automatic reconnect remains active.")
-     .setPositiveButton("OK",null).show();return;
+    new AlertDialog.Builder(this)
+     .setTitle("Controller niet verbonden")
+     .setMessage("De app heeft nog een eerder geselecteerde controller opgeslagen, maar heeft momenteel geen Bluetooth-verbinding.\n\nKies 'Opnieuw verbinden' voor een directe nieuwe poging, of 'Andere controller kiezen' om de opgeslagen selectie op deze telefoon te wissen en opnieuw te zoeken. Dit verandert de eigenaarsreservering op de ESP32 niet.")
+     .setPositiveButton("Opnieuw verbinden",(d,w)->{
+      startService(new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_RECONNECT));
+     })
+     .setNeutralButton("Andere controller kiezen",(d,w)->{
+      startService(new Intent(this,HpBleService.class).setAction(HpBleService.ACTION_CLEAR_SELECTION));
+      h.postDelayed(()->{
+       render();
+       if(adapter!=null&&permitted()&&adapter.isEnabled())scan();
+       else connectClicked();
+      },400);
+     })
+     .setNegativeButton("Annuleren",null).show();
+    return;
    }
    new AlertDialog.Builder(this).setTitle("Release controller")
     .setMessage("Release the controller for another phone and disconnect? Current LED and alarm state will not change.")
@@ -237,7 +250,9 @@ public final class MainActivity extends Activity {
   gas.setEnabled(licenseOk&&connected&&!ble.busy);
   power.setEnabled(licenseOk&&connected&&!ble.busy&&"NORMAL".equals(m));
   power.setAlpha(power.isEnabled()?1f:.45f);
-  connect.setText(ble!=null&&ble.hasSelection()?"Disconnect / Change device":scanning?"Scanning…":"Connect Bluetooth");
+  connect.setText(ble!=null&&ble.hasSelection()
+   ?(connected?"Verbinding verbreken / andere controller":"Opnieuw verbinden / andere controller")
+   :scanning?"Zoeken…":"Bluetooth verbinden");
   connect.setEnabled(!scanning&&(licenseOk||(ble!=null&&ble.hasSelection())));
   settings.setEnabled(licenseOk&&connected&&!ble.busy);
   settings.setAlpha(settings.isEnabled()?1f:.5f);
