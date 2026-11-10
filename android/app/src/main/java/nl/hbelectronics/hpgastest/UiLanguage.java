@@ -14,6 +14,7 @@ public final class UiLanguage {
  private static void add(String key,String nl,String de,String fr){LINES.put(key,new String[]{nl,de,fr});}
  static {
   add("Settings","Instellingen","Einstellungen","Paramètres");
+  add("General Settings","Algemene instellingen","Allgemeine Einstellungen","Paramètres généraux");
   add("Help & information","Uitleg en informatie","Hilfe und Informationen","Aide et informations");
   add("Language","Taal","Sprache","Langue");
   add("License management","Licentiebeheer","Lizenzverwaltung","Gestion des licences");
