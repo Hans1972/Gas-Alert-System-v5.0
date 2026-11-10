@@ -82,7 +82,7 @@ public final class MainActivity extends Activity {
   root.setPadding(dp(24),dp(25),dp(24),dp(20));scroll.addView(root);
   page.addView(scroll,new LinearLayout.LayoutParams(-1,0,1f));
   TextView footer=new TextView(this);
-  footer.setText("Made by HB-Electronics.nl · © 2026");footer.setTextSize(12);
+  footer.setText(tr("Made by HB-Electronics.nl · © 2026"));footer.setTextSize(12);
   footer.setTextColor(Color.WHITE);footer.setGravity(Gravity.CENTER);
   footer.setPadding(dp(10),dp(8),dp(10),dp(12));
   page.addView(footer,new LinearLayout.LayoutParams(-1,-2));setContentView(page);
@@ -567,7 +567,7 @@ public final class MainActivity extends Activity {
   heading.setTextColor(color);
   content.addView(heading);
   TextView bodyText=new TextView(this);
-  bodyText.setText(body);
+  bodyText.setText(UiLanguage.ble(this,body));
   bodyText.setTextSize(15);bodyText.setTextColor(Color.WHITE);
   bodyText.setPadding(0,dp(12),0,dp(6));
   content.addView(bodyText);
