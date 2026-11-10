@@ -20,6 +20,8 @@ public final class HpBleService extends Service {
  private static final UUID CCC=UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
  public static final String ACTION_CONNECT="nl.hbelectronics.gasalertv50.CONNECT";
  public static final String ACTION_DISCONNECT="nl.hbelectronics.gasalertv50.DISCONNECT";
+ public static final String ACTION_RECONNECT="nl.hbelectronics.gasalertv50.RECONNECT";
+ public static final String ACTION_CLEAR_SELECTION="nl.hbelectronics.gasalertv50.CLEAR_SELECTION";
  public static final String EXTRA_ADDRESS="address";
  public static final String EXTRA_NAME="name";
  private static final String PREFS="gas_alert_v50", CHANNEL="gas_alert_v50_ble";
@@ -195,6 +197,27 @@ public final class HpBleService extends Service {
   }else if(i!=null&&ACTION_DISCONNECT.equals(i.getAction())){
    finishSave(false,"Controller is disconnecting.");
    requestOwnerRelease();
+  }else if(i!=null&&ACTION_RECONNECT.equals(i.getAction())){
+   // Explicit user retry: reconnect to the same selected controller immediately.
+   if(active){
+    stopScan();handler.removeCallbacks(retry);closeGatt();
+    ready=false;authorized=false;revision=-1;mode="UNKNOWN";
+    message="Opnieuw verbinding maken met geselecteerde controller…";signal();
+    foreground();connect();
+   }
+  }else if(i!=null&&ACTION_CLEAR_SELECTION.equals(i.getAction())){
+   // Clear only Android's selected controller, NOT the phone owner token
+   // and NOT the hardware's reservation (which needs a connected RELEASE).
+   if(active&&!ready){
+    finishSave(false,"Bluetooth-selectie opnieuw instellen.");
+    stopScan();handler.removeCallbacks(retry);handler.removeCallbacks(retryScanEnd);
+    closeGatt();sendQueue.clear();releasePending=false;
+    active=false;ready=false;authorized=false;address="";name="";
+    mode="UNKNOWN";revision=-1;busy=false;
+    getSharedPreferences(PREFS,MODE_PRIVATE).edit().remove("address").remove("name").apply();
+    message="Opgeslagen Bluetooth-selectie gewist. Kies de controller opnieuw.";
+    signal();stopForeground(STOP_FOREGROUND_REMOVE);
+   }
   }else if(active){foreground();connect();}
   return START_STICKY;
  }
