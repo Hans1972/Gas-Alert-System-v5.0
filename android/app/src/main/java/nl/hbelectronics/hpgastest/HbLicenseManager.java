@@ -87,7 +87,12 @@ public final class HbLicenseManager {
   return claims;
  }
  public String status(){
-  if(prefs.getBoolean("revoked",false))return "Licentie ingetrokken";
+  String serverStatus=prefs.getString("server_status","");
+  if("revoked".equals(serverStatus))return "Licentie ingetrokken";
+  if("blocked".equals(serverStatus))return "Licentie geblokkeerd";
+  if("expired".equals(serverStatus))return "Licentie of proefperiode verlopen";
+  if("recovery_required".equals(serverStatus))return "Heractivatie vereist";
+  if("invalid_license".equals(serverStatus))return "Licentiecode ongeldig of verlopen";
   String proof=prefs.getString("proof","");
   if(proof.isEmpty())return "Nog niet geactiveerd";
   try{
@@ -138,21 +143,42 @@ public final class HbLicenseManager {
      long serverTime=response.optLong("server_time");
      if(Math.abs(System.currentTimeMillis()/1000L-serverTime)>86400)
       throw new IllegalStateException("Phone clock differs from license server");
-     prefs.edit().putString("proof",proof).putLong("last_check",serverTime).putBoolean("revoked",false).apply();
+     prefs.edit().putString("proof",proof).putLong("last_check",serverTime).remove("server_status").remove("revoked").apply();
      ok=true;
      detail="Licentie gecontroleerd: "+("paid".equals(claims.optString("type"))?"geactiveerd":"proefperiode")+".";
     }else{
-     if("revoked".equals(status)){
-      // A server-confirmed revocation overrides any previously cached proof.
-      prefs.edit().remove("proof").remove("last_check").putBoolean("revoked",true).apply();
-      detail="Deze licentie is ingetrokken door HB-Electronics. De licentie is niet meer geldig. Neem contact op met HB-Electronics als dit volgens jou niet klopt.";
+     // Only a definitive server decision may invalidate a previously signed proof.
+     // Connection errors, rate limits and unknown server responses are NOT revocations.
+     if("revoked".equals(status)||"blocked".equals(status)||"expired".equals(status)){
+      prefs.edit().remove("proof").remove("last_check").putString("server_status",status).apply();
+     }else if("recovery_required".equals(status)){
+      prefs.edit().remove("proof").putString("server_status",status).apply();
+     }else if("invalid_license".equals(status)){
+      // An invalid newly entered key does not revoke a previously confirmed license.
+      if(prefs.getString("proof","").isEmpty())
+       prefs.edit().putString("server_status",status).apply();
      }
-     else if("unavailable".equals(status))detail="Product "+PRODUCT+" is nog niet actief op de HB-Electronics licentieserver.";
-     else if("recovery_required".equals(status))detail="Heractivatie vereist na herinstallatie: voer de licentiecode opnieuw in.";
-     else if("unknown".equals(status))detail="Deze installatie is nog niet aangemeld; start eerst de proefperiode.";
-     else if("seat_limit".equals(status))detail="Maximum aantal apparaten bereikt.";
-     else if("invalid_license".equals(status))detail="Ongeldige of verlopen licentiecode.";
-     else detail="De licentie kon niet worden gecontroleerd. Controleer de licentiegegevens of probeer het opnieuw.";
+     if("revoked".equals(status))
+      detail="Deze licentie is ingetrokken door HB-Electronics en is niet meer geldig. Neem bij vragen contact op met HB-Electronics.";
+     else if("blocked".equals(status))
+      detail="Deze licentie is geblokkeerd. Neem contact op met HB-Electronics.";
+     else if("expired".equals(status))
+      detail="De licentie of proefperiode is verlopen. Activeer een geldige licentie om verder te gaan.";
+     else if("unavailable".equals(status))
+      detail="Dit product is momenteel niet beschikbaar op de licentieserver.";
+     else if("recovery_required".equals(status))
+      detail="Deze installatie moet opnieuw worden geactiveerd. Voer je geldige licentiecode in.";
+     else if("unknown".equals(status))
+      detail="Deze app-installatie is nog niet geregistreerd. Start de proefperiode of activeer een licentie.";
+     else if("seat_limit".equals(status))
+      detail="Het maximum aantal toegestane apparaten voor deze licentie is bereikt.";
+     else if("invalid_license".equals(status))
+      detail="De ingevoerde licentiecode is ongeldig of verlopen.";
+     else if(responseCode==429)
+      detail="De licentieserver ontvangt te veel verzoeken. Probeer het later opnieuw.";
+     else
+      detail="De licentie kon niet worden gecontroleerd. Probeer het later opnieuw.";
+
     }
    }catch(Exception e){detail="Licentiecontrole niet gelukt: "+e.getMessage();}
    finally{if(connection!=null)connection.disconnect();}
