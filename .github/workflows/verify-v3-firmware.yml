@@ -1,0 +1,39 @@
+name: Verify Gas Alert System v3.0 ESP32-C3 firmware
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/verify-v3-firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  esp32c3:
+    name: Compile XIAO ESP32-C3 v3.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core 3.3.2 and Adafruit NeoPixel
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.2 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli lib install 'Adafruit NeoPixel'
+      - name: Compile v3.0 firmware
+        run: arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32C3 --warnings default firmware/Gas_Alert_v3_0
+      - name: Package verified Arduino sketch
+        run: |
+          mkdir -p dist
+          cd firmware
+          zip -r ../dist/Gas_Alert_System_v3_0_FIX8.zip Gas_Alert_v3_0
+      - name: Upload firmware ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gas-Alert-System-v3.0-FIX8-Firmware
+          path: dist/Gas_Alert_System_v3_0_FIX8.zip
+          if-no-files-found: error

@@ -1,0 +1,29 @@
+# Arduino / build products
+build/
+*.bin
+*.elf
+*.map
+*.hex
+*.uf2
+*.log
+
+# Android
+.gradle/
+**/build/
+local.properties
+.idea/
+*.iml
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Do not commit secrets or Wi-Fi credentials
+.env
+.env.*
+secrets.h
+credentials.h
