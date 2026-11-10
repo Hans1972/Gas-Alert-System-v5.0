@@ -366,9 +366,9 @@ public final class MainActivity extends Activity {
  }
  private void refreshLicenseLabel(){
   if(licenseStatus==null||licenseManager==null)return;
-  String license=licenseManager.status();
-  boolean valid=license.startsWith("Licentie actief")||license.startsWith("Proefperiode actief");
-  String label="🔑 "+license+" · tik voor licentiebeheer";
+  String license=currentLicenseStatus();
+  boolean valid=licenseManager.hasValidLicense();
+  String label="🔑 "+license+" · "+tr("Tap for license management");
   if(!label.equals(lastLicenseBannerText)){
    licenseStatus.setText(label);
    lastLicenseBannerText=label;
@@ -404,7 +404,7 @@ public final class MainActivity extends Activity {
   try{
    startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://hb-electronics.nl/")));
   }catch(Exception ex){
-   Toast.makeText(this,"Kan de HB-Electronics webshop niet openen.",Toast.LENGTH_LONG).show();
+   Toast.makeText(this,tr("Unable to open the HB-Electronics webshop."),Toast.LENGTH_LONG).show();
   }
  }
  private void showLicenseBlocked(){
@@ -412,15 +412,15 @@ public final class MainActivity extends Activity {
   if(licenseBlockedDialog!=null&&licenseBlockedDialog.isShowing())return;
   String state=licenseManager.status();
   licenseWarningShownFor=state;
-  String explanation="De bediening van de lamp en de instellingen zijn geblokkeerd.\n\n"
-    +"Status: "+state+"\n\n"
-    +"Activeer een geldige licentie, start een beschikbare proefperiode of koop een licentie bij HB-Electronics.";
+  String explanation=tr("Lamp control and settings are locked.")+"\n\n"
+    +tr("Status:")+" "+currentLicenseStatus()+"\n\n"
+    +tr("Activate a valid license, start an available trial, or purchase a license from HB-Electronics.");
   AlertDialog dialog=new AlertDialog.Builder(this)
-   .setTitle("Licentie vereist · HP Gas Alert v5.0")
+   .setTitle(tr("License required · HP Gas Alert v5.0"))
    .setMessage(explanation)
-   .setPositiveButton("Licentie activeren",(d,w)->showLicenseManager())
-   .setNeutralButton("Licentie kopen",(d,w)->openLicenseShop())
-   .setNegativeButton("Sluiten",null).create();
+   .setPositiveButton(tr("Activate license"),(d,w)->showLicenseManager())
+   .setNeutralButton(tr("Buy license"),(d,w)->openLicenseShop())
+   .setNegativeButton(tr("Close"),null).create();
   licenseBlockedDialog=dialog;
   dialog.setOnShowListener(d->{
    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.rgb(72,189,125));
@@ -445,53 +445,53 @@ public final class MainActivity extends Activity {
   layout.setOrientation(LinearLayout.VERTICAL);
   layout.setPadding(dp(22),dp(16),dp(22),dp(10));
   TextView header=new TextView(this);
-  header.setText("HB-Electronics.nl · productcode hb-gas-alert-v5");
+  header.setText("HB-Electronics.nl · hb-gas-alert-v5");
   header.setTextColor(Color.LTGRAY);header.setTextSize(14);
   layout.addView(header);
   TextView statusText=new TextView(this);
-  statusText.setText(manager.status());statusText.setTextColor(Color.WHITE);
+  statusText.setText(currentLicenseStatus());statusText.setTextColor(Color.WHITE);
   statusText.setTextSize(17);statusText.setTypeface(null,Typeface.BOLD);
   statusText.setPadding(0,dp(12),0,dp(16));
   layout.addView(statusText);
   EditText licenseInput=new EditText(this);
   licenseInput.setSingleLine(true);
-  licenseInput.setHint("Licentiecode invoeren");
+  licenseInput.setHint(tr("Enter license code"));
   licenseInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
   layout.addView(licenseInput);
-  Button activate=new Button(this);activate.setAllCaps(false);activate.setText("Licentie activeren");
+  Button activate=new Button(this);activate.setAllCaps(false);activate.setText(tr("Activate license"));
   layout.addView(activate);
-  Button trial=new Button(this);trial.setAllCaps(false);trial.setText("Proefperiode starten");
+  Button trial=new Button(this);trial.setAllCaps(false);trial.setText(tr("Start trial"));
   layout.addView(trial);
-  Button check=new Button(this);check.setAllCaps(false);check.setText("Licentie controleren");
+  Button check=new Button(this);check.setAllCaps(false);check.setText(tr("Check license"));
   layout.addView(check);
-  Button buy=new Button(this);buy.setAllCaps(false);buy.setText("Licentie kopen bij HB-Electronics.nl");
+  Button buy=new Button(this);buy.setAllCaps(false);buy.setText(tr("Buy license at HB-Electronics.nl"));
   layout.addView(buy);
   buy.setOnClickListener(v->openLicenseShop());
   final boolean[] running={false};
   final AlertDialog dialog=new AlertDialog.Builder(this)
-   .setTitle("Licentiebeheer · v5.0")
-   .setView(layout).setPositiveButton("Sluiten",null).create();
+   .setTitle(tr("License management · v5.0"))
+   .setView(layout).setPositiveButton(tr("Close"),null).create();
   class Actions {
    void run(String action){
     if(running[0])return;
     String code=licenseInput.getText().toString().trim();
     if("activate".equals(action)&&code.isEmpty()){
-     Toast.makeText(MainActivity.this,"Vul eerst je licentiecode in.",Toast.LENGTH_LONG).show();
+     Toast.makeText(MainActivity.this,tr("Enter your license code first."),Toast.LENGTH_LONG).show();
      return;
     }
     running[0]=true;activate.setEnabled(false);trial.setEnabled(false);check.setEnabled(false);
-    statusText.setText("Licentieserver controleren…");
+    statusText.setText(tr("License server is checking…"));
     if(!manager.request(action,code,(ok,message)->{
      if(!dialog.isShowing())return;
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
-     statusText.setText(manager.status());
+     statusText.setText(currentLicenseStatus());
      refreshLicenseLabel();
      render();
      showLicenseNotice(ok,message);
     })){
      running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
-     statusText.setText(manager.status());
-     Toast.makeText(MainActivity.this,"Licentiecontrole is al bezig.",Toast.LENGTH_LONG).show();
+     statusText.setText(currentLicenseStatus());
+     Toast.makeText(MainActivity.this,tr("License check in progress."),Toast.LENGTH_LONG).show();
     }
    }
   }
@@ -506,20 +506,20 @@ public final class MainActivity extends Activity {
    running[0]=true;
    activate.setEnabled(false);trial.setEnabled(false);check.setEnabled(false);
    String lastKnown=manager.status();
-   statusText.setText("Licentiestatus controleren…\nLaatste bekende status: "+lastKnown);
+   statusText.setText(tr("Checking license status…")+"\n"+tr("Last known status:")+" "+UiLanguage.licenseStatus(this,lastKnown));
    if(!manager.request("check","",(ok,message)->{
     if(!dialog.isShowing())return;
     running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
-    statusText.setText(manager.status());
+    statusText.setText(currentLicenseStatus());
     refreshLicenseLabel();
     render();
     if(!ok && manager.status().equals(lastKnown)){
      // A failed network request is not proof of revocation; make uncertainty clear.
-     statusText.setText("Laatste bekende status: "+lastKnown+"\nOnline controle niet bevestigd.");
+     statusText.setText(tr("Last known status:")+" "+UiLanguage.licenseStatus(this,lastKnown)+"\n"+tr("Online check not confirmed."));
     }
    })){
     running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
-    statusText.setText(lastKnown);
+    statusText.setText(UiLanguage.licenseStatus(this,lastKnown));
    }
   }
  }
