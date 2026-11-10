@@ -91,17 +91,17 @@ public final class MainActivity extends Activity {
    v.setPadding(0,bars.top,0,bars.bottom);return insets;
   });
   text("HP Gas Alert System",32).setTypeface(null,Typeface.BOLD);
-  text("Version 5.0",15);
+  text(tr("Version")+" 5.0",15);
   licenseManager=new HbLicenseManager(this);
-  licenseStatus=text("Licentiestatus controleren…",14);
+  licenseStatus=text(tr("Checking license status…"),14);
   licenseStatus.setPadding(dp(12),dp(8),dp(12),dp(8));
   licenseStatus.setTypeface(null,Typeface.BOLD);
   licenseStatus.setOnClickListener(v->showLicenseManager());
-  connection=text("Bluetooth not connected",17);
-  signal=text("Signal: unavailable (disconnected)",15);
+  connection=text(tr("Bluetooth not connected"),17);
+  signal=text(tr("Signal: unavailable (disconnected)"),15);
   // Create button drawables once. Replacing them every animation frame causes
   // unnecessary view invalidation and visually unstable button surfaces.
-  connect=makeButton("Connect Bluetooth",58,16);
+  connect=makeButton(tr("Connect Bluetooth"),58,16);
   connect.setOnClickListener(v->connectClicked());
   gas=makeButton("HP GAS ALERT",225,27);gas.setTypeface(null,Typeface.BOLD);
   gas.setAutoSizeTextTypeUniformWithConfiguration(12,29,1,android.util.TypedValue.COMPLEX_UNIT_SP);
@@ -113,17 +113,17 @@ public final class MainActivity extends Activity {
    else if("OFF".equals(ble.mode))ble.command("ON");
    render();
   });
-  status=text("STATUS UNKNOWN",24);status.setGravity(Gravity.CENTER);status.setTypeface(null,Typeface.BOLD);
-  detail=text("Connect to a Gas Alert v5.0 controller",15);detail.setGravity(Gravity.CENTER);
-  power=makeButton("ALL LIGHTS OFF",55,16);
+  status=text(tr("STATUS UNKNOWN"),24);status.setGravity(Gravity.CENTER);status.setTypeface(null,Typeface.BOLD);
+  detail=text(tr("Connect to a Gas Alert v5.0 controller"),15);detail.setGravity(Gravity.CENTER);
+  power=makeButton(tr("ALL LIGHTS OFF"),55,16);
   power.setOnClickListener(v->{
    if(!allowLicensedControl())return;
    if(ble==null||!"NORMAL".equals(ble.mode))return;
-   new AlertDialog.Builder(this).setTitle("Turn all lights off?")
-    .setMessage("This is only possible when the controller confirms NORMAL (green).")
-    .setNegativeButton("Cancel",null).setPositiveButton("Turn off",(d,w)->{if(ble!=null)ble.command("OFF");}).show();
+   new AlertDialog.Builder(this).setTitle(tr("Turn all lights off?"))
+    .setMessage(tr("This is only possible when the controller confirms NORMAL (green)."))
+    .setNegativeButton(tr("Cancel"),null).setPositiveButton(tr("Turn off"),(d,w)->{if(ble!=null)ble.command("OFF");}).show();
   });
-  settings=makeButton("⚙ Settings / Help",55,16);
+  settings=makeButton("⚙ "+tr("Settings"),55,16);
   settings.setOnClickListener(v->showSettings());
   gas.setBackground(rounded(Color.argb(78,255,255,255)));
   power.setBackground(rounded(Color.argb(45,255,255,255)));
@@ -134,13 +134,6 @@ public final class MainActivity extends Activity {
   render();
   // A clean install has a new phone token; controller ownership from a removed
   // installation cannot safely be overridden by Bluetooth alone.
-  if(false && !getPreferences(MODE_PRIVATE).getBoolean("fresh_install_hint_shown",false)){
-   getPreferences(MODE_PRIVATE).edit().putBoolean("fresh_install_hint_shown",true).apply();
-   h.post(()->new AlertDialog.Builder(this)
-    .setTitle("Fresh installation · v5.0")
-    .setMessage("This v5.0 app installs separately from v3.0. Do not uninstall v3.0. Tap Connect Bluetooth. If the controller remembers the old installation, it automatically makes the owner slot available after a maximum of 30 minutes without the old owner. The v5.0 app will retry automatically; no BOOT button or serial monitor is needed. Keep the controller powered on. LED and buzzer settings remain stored.")
-    .setPositiveButton("Understood",null).show());
-  }
  }
  private Button makeButton(String label,int height,int size){
   Button b=new Button(this);b.setText(label);b.setTextSize(size);b.setAllCaps(false);
@@ -295,25 +288,25 @@ public final class MainActivity extends Activity {
    getWindow().setNavigationBarColor(bg);
   }
   if(!connected){
-   gas.setText("HP GAS ALERT\nNOT CONNECTED");status.setText("STATUS UNKNOWN");
-   connection.setText(ble!=null?ble.message:"Bluetooth not connected");
-   detail.setText(ble!=null&&ble.hasSelection()?"Automatic Bluetooth reconnect is active":"Select the Gas Alert v5.0 controller.");
+   gas.setText(tr("HP GAS ALERT\nNOT CONNECTED"));status.setText(tr("STATUS UNKNOWN"));
+   connection.setText(ble!=null?UiLanguage.ble(this,ble.message):tr("Bluetooth not connected"));
+   detail.setText(ble!=null&&ble.hasSelection()?tr("Automatic Bluetooth reconnect is active"):tr("Select the Gas Alert v5.0 controller."));
    detail.setVisibility(View.VISIBLE);
   }else{
-   if("ALARM".equals(m)){gas.setText("HP GAS ALERT ON\nTAP TO RESET");status.setText("ALARM · ORANGE");}
-   else if("NORMAL".equals(m)){gas.setText("HP GAS ALERT OFF\nTAP TO START");status.setText("NORMAL · GREEN");}
-   else{gas.setText("LIGHTS OFF\nTAP TO TURN ON");status.setText("OFF");}
-   connection.setText(ble.message);detail.setVisibility(View.GONE);
+   if("ALARM".equals(m)){gas.setText(tr("HP GAS ALERT ON\nTAP TO RESET"));status.setText(tr("ALARM · ORANGE"));}
+   else if("NORMAL".equals(m)){gas.setText(tr("HP GAS ALERT OFF\nTAP TO START"));status.setText(tr("NORMAL · GREEN"));}
+   else{gas.setText(tr("LIGHTS OFF\nTAP TO TURN ON"));status.setText(tr("OFF"));}
+   connection.setText(UiLanguage.ble(this,ble.message));detail.setVisibility(View.GONE);
   }
-  signal.setText(ble==null?"Signal: unavailable (disconnected)":ble.signalLabel());
+  signal.setText(ble==null?tr("Signal: unavailable (disconnected)"):UiLanguage.ble(this,ble.signalLabel()));
   refreshLicenseLabel();
   boolean licenseOk=licenseManager!=null&&licenseManager.hasValidLicense();
   gas.setEnabled(licenseOk&&connected&&!ble.busy);
   power.setEnabled(licenseOk&&connected&&!ble.busy&&"NORMAL".equals(m));
   power.setAlpha(power.isEnabled()?1f:.45f);
   connect.setText(ble!=null&&ble.hasSelection()
-   ?(connected?"Verbinding verbreken / andere controller":"Opnieuw verbinden / andere controller")
-   :scanning?"Zoeken…":"Bluetooth verbinden");
+   ?(connected?tr("Disconnect / Change device"):tr("Reconnect / Change device"))
+   :scanning?tr("Scanning…"):tr("Connect Bluetooth"));
   connect.setEnabled(!scanning&&(licenseOk||(ble!=null&&ble.hasSelection())));
   settings.setEnabled(true);settings.setAlpha(1f);
  }
