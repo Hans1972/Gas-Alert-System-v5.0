@@ -147,6 +147,41 @@ public final class UiLanguage {
   add("LEDs","leds","LEDs","LED");
   add("Controller confirmed · state revision","Controller bevestigd · statusrevisie","Controller bestätigt · Statusrevision","Contrôleur confirmé · révision d’état");
   add("Disconnecting…","Verbinding verbreken…","Verbindung wird getrennt…","Déconnexion…");
+  add("Made by HB-Electronics.nl · © 2026","Gemaakt door HB-Electronics.nl · © 2026","Erstellt von HB-Electronics.nl · © 2026","Créé par HB-Electronics.nl · © 2026");
+  add("Release not confirmed. Controller ownership may remain reserved. Reconnect and retry.","Vrijgave niet bevestigd. Eigenaarschap kan nog gereserveerd zijn. Verbind opnieuw.","Freigabe nicht bestätigt. Die Besitzerreservierung kann bestehen bleiben. Erneut verbinden.","Libération non confirmée. La réservation peut subsister. Reconnectez-vous.");
+  add("No confirmation received from controller.","Geen bevestiging ontvangen van controller.","Keine Bestätigung vom Controller erhalten.","Aucune confirmation reçue du contrôleur.");
+  add("Controller is disconnecting.","Verbinding met controller wordt verbroken.","Controller wird getrennt.","Déconnexion du contrôleur en cours.");
+  add("Opnieuw verbinding maken met geselecteerde controller…","Opnieuw verbinding maken met geselecteerde controller…","Erneute Verbindung zum ausgewählten Controller…","Reconnexion au contrôleur sélectionné…");
+  add("Bluetooth-selectie opnieuw instellen.","Bluetooth-selectie opnieuw instellen.","Bluetooth-Auswahl zurücksetzen.","Réinitialiser la sélection Bluetooth.");
+  add("Opgeslagen Bluetooth-selectie gewist. Kies de controller opnieuw.","Opgeslagen Bluetooth-selectie gewist. Kies de controller opnieuw.","Gespeicherte Bluetooth-Auswahl gelöscht. Controller erneut auswählen.","Sélection Bluetooth effacée. Sélectionnez à nouveau le contrôleur.");
+  add("Owner cannot be released offline. Reconnect to the controller first.","Eigenaarschap kan niet offline worden vrijgegeven. Verbind eerst opnieuw.","Besitzer kann offline nicht freigegeben werden. Zuerst erneut verbinden.","Impossible de libérer le propriétaire hors ligne. Reconnectez-vous d’abord.");
+  add("Releasing controller ownership…","Eigenaarschap van controller vrijgeven…","Controller-Besitzer wird freigegeben…","Libération du contrôleur…");
+  add("Disconnected — ownership released","Verbinding verbroken · eigenaarschap vrijgegeven","Getrennt · Besitzer freigegeben","Déconnecté · propriétaire libéré");
+  add("Connection error","Verbindingsfout","Verbindungsfehler","Erreur de connexion");
+  add("Bluetooth connection interrupted before confirmation.","Bluetooth-verbinding verbroken vóór bevestiging.","Bluetooth-Verbindung vor Bestätigung unterbrochen.","Connexion Bluetooth interrompue avant confirmation.");
+  add("Link lost before release confirmation; reconnecting to check ownership","Verbinding verbroken vóór bevestigde vrijgave; opnieuw verbinden om eigenaarschap te controleren","Verbindung vor Freigabebestätigung verloren; erneute Verbindung zur Kontrolle","Connexion perdue avant confirmation de libération ; reconnexion pour vérifier.");
+  add("Old owner still reserved — automatic retry (up to 30 min)","Vorige eigenaar nog gereserveerd · automatisch opnieuw proberen (max. 30 minuten)","Vorheriger Besitzer noch reserviert · automatischer neuer Versuch (bis 30 Min.)","Ancien propriétaire toujours réservé · nouvelle tentative automatique (jusqu’à 30 min)");
+  add("Gas Alert BLE service not found","Gas Alert-BLE-service niet gevonden","Gas Alert-BLE-Dienst nicht gefunden","Service BLE Gas Alert introuvable");
+  add("Incomplete Gas Alert firmware protocol","Gas Alert-firmwareprotocol onvolledig","Gas Alert-Firmwareprotokoll unvollständig","Protocole du micrologiciel Gas Alert incomplet");
+  add("BLE service found - authorizing phone","BLE-service gevonden · telefoon autoriseren","BLE-Dienst gefunden · Telefon wird autorisiert","Service BLE trouvé · autorisation du téléphone");
+  add("Notification unavailable - status polling fallback","Meldingen niet beschikbaar · status wordt actief opgevraagd","Benachrichtigungen nicht verfügbar · Status wird abgefragt","Notifications indisponibles · lecture périodique de l’état");
+  add("Notification subscription unsupported - polling fallback","Aanmelden voor meldingen niet ondersteund · status wordt opgevraagd","Benachrichtigungsabo nicht unterstützt · Statusabfrage","Abonnement aux notifications non pris en charge · lecture périodique");
+  add("Reading controller…","Controller uitlezen…","Controller wird gelesen…","Lecture du contrôleur…");
+  add("Notifications unavailable - using polling","Meldingen niet beschikbaar · status wordt opgevraagd","Benachrichtigungen nicht verfügbar · Statusabfrage","Notifications indisponibles · interrogation périodique");
+  add("Failed to read the setting back from controller.","Opgeslagen instelling kon niet worden teruggelezen.","Einstellung konnte nicht vom Controller zurückgelesen werden.","Impossible de relire le paramètre depuis le contrôleur.");
+  add("Authorization sent - reading controller","Autorisatie verzonden · controller uitlezen","Autorisierung gesendet · Controller wird gelesen","Autorisation envoyée · lecture du contrôleur");
+  add("License invalid. Setting not saved.","Licentie ongeldig. Instelling niet opgeslagen.","Lizenz ungültig. Einstellung nicht gespeichert.","Licence invalide. Paramètre non enregistré.");
+  add("License required · control locked","Licentie vereist · bediening geblokkeerd","Lizenz erforderlich · Steuerung gesperrt","Licence requise · commande bloquée");
+  add("BLE rejected the settings command.","BLE heeft het instellingencommando geweigerd.","BLE hat den Einstellungsbefehl abgelehnt.","BLE a refusé la commande de paramètres.");
+  add("Sending","Verzenden","Senden","Envoi");
+  add("Bluetooth disconnected","Bluetooth niet verbonden","Bluetooth getrennt","Bluetooth déconnecté");
+  add("Bluetooth reconnecting","Bluetooth opnieuw verbinden","Bluetooth wird erneut verbunden","Reconnexion Bluetooth");
+  add("Authentication error","Autorisatiefout","Autorisierungsfehler","Erreur d’autorisation");
+  add("Command write failed","Commando verzenden mislukt","Befehl konnte nicht gesendet werden","Échec de l’envoi de la commande");
+  add("Owner release failed","Eigenaarschap vrijgeven mislukt","Besitzerfreigabe fehlgeschlagen","Échec de la libération du propriétaire");
+  add("BLE read error","BLE-leesfout","BLE-Lesefehler","Erreur de lecture BLE");
+  add("BLE write failed","BLE-schrijffout","BLE-Schreibfehler","Échec d’écriture BLE");
+  add("Unable to send command","Commando verzenden mislukt","Befehl konnte nicht gesendet werden","Impossible d’envoyer la commande");
  }
  public static String code(Context context){
   String code=context.getSharedPreferences("ui_preferences",Context.MODE_PRIVATE).getString("language","en");
@@ -224,6 +259,18 @@ public final class UiLanguage {
   if(message.startsWith("Bluetooth link disconnected"))return t(c,"Bluetooth link disconnected — automatic reconnect");
   if(message.startsWith("Bluetooth connected · waiting"))return t(c,"Bluetooth connected · waiting for fresh controller status");
   if(message.startsWith("Bluetooth connected"))return t(c,"Bluetooth connected · controller confirmed");
+  if(message.startsWith("Connection error: "))return t(c,"Connection error")+": "+message.substring("Connection error: ".length());
+  if(message.startsWith("Bluetooth disconnected ("))return t(c,"Bluetooth disconnected");
+  if(message.startsWith("BLE read error "))return t(c,"BLE read error")+" "+message.substring("BLE read error ".length());
+  if(message.startsWith("BLE write failed ("))return t(c,"BLE write failed")+" "+message.substring("BLE write failed ".length());
+  if(message.startsWith("BLE authorization failed (")||message.startsWith("BLE authorization write error ("))
+   return t(c,"Authentication error");
+  if(message.startsWith("Command write failed: "))return t(c,"Command write failed")+" "+message.substring("Command write failed: ".length());
+  if(message.startsWith("Owner release failed ("))return t(c,"Owner release failed");
+  if(message.startsWith("Unable to send command ("))return t(c,"Unable to send command");
+  if(message.startsWith("Sending "))return t(c,"Sending")+" "+message.substring(8);
+  if(message.startsWith("Licentie niet geldig."))return t(c,"License invalid. Setting not saved.");
+  if(message.startsWith("Licentie vereist"))return t(c,"License required · control locked");
   return t(c,message);
  }
 }
