@@ -307,6 +307,26 @@ public final class MainActivity extends Activity {
   trial.setOnClickListener(v->actions.run("trial"));
   check.setOnClickListener(v->actions.run("check"));
   dialog.show();
+  // Refresh status from the server when license management is opened.
+  // Never claim that a cached proof reflects a just-checked online status.
+  if(!"Nog niet geactiveerd".equals(manager.status())){
+   running[0]=true;
+   activate.setEnabled(false);trial.setEnabled(false);check.setEnabled(false);
+   String lastKnown=manager.status();
+   statusText.setText("Licentiestatus controleren…\nLaatste bekende status: "+lastKnown);
+   if(!manager.request("check","",(ok,message)->{
+    if(!dialog.isShowing())return;
+    running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
+    statusText.setText(manager.status());
+    if(!ok && manager.status().equals(lastKnown)){
+     // A failed network request is not proof of revocation; make uncertainty clear.
+     statusText.setText("Laatste bekende status: "+lastKnown+"\nOnline controle niet bevestigd.");
+    }
+   })){
+    running[0]=false;activate.setEnabled(true);trial.setEnabled(true);check.setEnabled(true);
+    statusText.setText(lastKnown);
+   }
+  }
  }
  private String valueOf(String cfg,String key){
   if(cfg==null)return "?";
