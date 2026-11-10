@@ -317,8 +317,10 @@ public final class MainActivity extends Activity {
   String[] keys={"greenBrightness","leds","layout","effect","brightness","tint","speed","afterglow","colorMode","buzzerMode","buzzerSeconds","pulseOnMs","pulseOffMs"};
   String[] names={"Green brightness (%)","Number of physical LEDs","LED layout (0 single, 1 double, 2 matrix)","Orange effect (1–40)","Orange brightness (%)","Orange hue (0–100)","Animation speed (25–200%)","Afterglow (0–100)","Color order (0–5)","Buzzer (0 continuous, 1 pulsed)","Buzzer duration (seconds)","Pulse ON (milliseconds)","Pulse OFF (milliseconds)"};
   // Existing hardware settings remain immediately visible, without an accordion.
-  boolean editable=licenseManager!=null&&licenseManager.hasValidLicense()&&ble!=null&&ble.ready;
-  for(int i=0;i<keys.length;i++){
+  boolean connected=ble!=null&&ble.ready&&ble.revision>=0;
+  boolean editable=connected&&licenseManager!=null&&licenseManager.hasValidLicense();
+  // When offline, hardware settings cannot be edited. Show General Settings directly.
+  if(connected)for(int i=0;i<keys.length;i++){
    final String key=keys[i],title=tr(names[i]);
    Button settingButton=new Button(this);settingButton.setAllCaps(false);
    settingButton.setText(title+"\n"+displayValue(key,ble!=null?valueOf(ble.config,key):"?"));
@@ -328,19 +330,20 @@ public final class MainActivity extends Activity {
   }
   // General Settings is the final, initially collapsed section.
   Button general=new Button(this);general.setAllCaps(false);
-  general.setText("▸ "+tr("General Settings"));
+  general.setText((connected?"▸ ":"▾ ")+tr("General Settings"));
   LinearLayout.LayoutParams generalLp=new LinearLayout.LayoutParams(-1,dp(56));
   generalLp.topMargin=dp(18);
   content.addView(general,generalLp);
   LinearLayout generalContent=new LinearLayout(this);
   generalContent.setOrientation(LinearLayout.VERTICAL);
   generalContent.setPadding(dp(8),dp(6),dp(8),dp(8));
-  generalContent.setVisibility(View.GONE);
+  generalContent.setVisibility(connected?View.GONE:View.VISIBLE);
   content.addView(generalContent,new LinearLayout.LayoutParams(-1,-2));
   general.setOnClickListener(vw->{
    boolean expanded=generalContent.getVisibility()!=View.VISIBLE;
    generalContent.setVisibility(expanded?View.VISIBLE:View.GONE);
    general.setText((expanded?"▾ ":"▸ ")+tr("General Settings"));
+   if(expanded)scroll.post(()->scroll.smoothScrollTo(0,general.getTop()));
   });
   TextView langTitle=new TextView(this);langTitle.setText(tr("Language"));
   langTitle.setTextColor(Color.WHITE);langTitle.setTextSize(16);langTitle.setTypeface(null,Typeface.BOLD);
@@ -371,6 +374,7 @@ public final class MainActivity extends Activity {
    boolean show=info.getVisibility()!=View.VISIBLE;
    info.setVisibility(show?View.VISIBLE:View.GONE);
    help.setText((show?"▾ ":"▸ ")+tr("Help & information"));
+   if(show)scroll.post(()->scroll.smoothScrollTo(0,help.getTop()+generalContent.getTop()));
   });
   Button licensing=new Button(this);licensing.setAllCaps(false);
   licensing.setText("🔑 "+tr("License management")+" · HB-Electronics.nl");
@@ -378,8 +382,10 @@ public final class MainActivity extends Activity {
   licenseLp.topMargin=dp(18);
   generalContent.addView(licensing,licenseLp);
   licensing.setOnClickListener(v->showLicenseManager());
-  new AlertDialog.Builder(this).setTitle("HP Gas Alert System · "+tr("Settings")+" v5.0")
-   .setView(scroll).setPositiveButton(tr("Close"),null).show();
+  AlertDialog settingsDialog=new AlertDialog.Builder(this).setTitle("HP Gas Alert System · "+tr("Settings")+" v5.0")
+   .setView(scroll).setPositiveButton(tr("Close"),null).create();
+  settingsDialog.show();
+  if(!connected)scroll.post(()->scroll.scrollTo(0,general.getTop()));
  }
  private void refreshLicenseLabel(){
   if(licenseStatus==null||licenseManager==null)return;
