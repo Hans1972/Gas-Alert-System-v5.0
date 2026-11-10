@@ -87,6 +87,7 @@ public final class HbLicenseManager {
   return claims;
  }
  public String status(){
+  if(prefs.getBoolean("revoked",false))return "Licentie ingetrokken";
   String proof=prefs.getString("proof","");
   if(proof.isEmpty())return "Nog niet geactiveerd";
   try{
@@ -137,16 +138,21 @@ public final class HbLicenseManager {
      long serverTime=response.optLong("server_time");
      if(Math.abs(System.currentTimeMillis()/1000L-serverTime)>86400)
       throw new IllegalStateException("Phone clock differs from license server");
-     prefs.edit().putString("proof",proof).putLong("last_check",serverTime).apply();
+     prefs.edit().putString("proof",proof).putLong("last_check",serverTime).putBoolean("revoked",false).apply();
      ok=true;
      detail="Licentie gecontroleerd: "+("paid".equals(claims.optString("type"))?"geactiveerd":"proefperiode")+".";
     }else{
-     if("unavailable".equals(status))detail="Product "+PRODUCT+" is nog niet actief op de HB-Electronics licentieserver.";
+     if("revoked".equals(status)){
+      // A server-confirmed revocation overrides any previously cached proof.
+      prefs.edit().remove("proof").remove("last_check").putBoolean("revoked",true).apply();
+      detail="Deze licentie is ingetrokken door HB-Electronics. De licentie is niet meer geldig. Neem contact op met HB-Electronics als dit volgens jou niet klopt.";
+     }
+     else if("unavailable".equals(status))detail="Product "+PRODUCT+" is nog niet actief op de HB-Electronics licentieserver.";
      else if("recovery_required".equals(status))detail="Heractivatie vereist na herinstallatie: voer de licentiecode opnieuw in.";
      else if("unknown".equals(status))detail="Deze installatie is nog niet aangemeld; start eerst de proefperiode.";
      else if("seat_limit".equals(status))detail="Maximum aantal apparaten bereikt.";
      else if("invalid_license".equals(status))detail="Ongeldige of verlopen licentiecode.";
-     else detail="Licentieserver: "+status+" (HTTP "+responseCode+")";
+     else detail="De licentie kon niet worden gecontroleerd. Controleer de licentiegegevens of probeer het opnieuw.";
     }
    }catch(Exception e){detail="Licentiecontrole niet gelukt: "+e.getMessage();}
    finally{if(connection!=null)connection.disconnect();}
