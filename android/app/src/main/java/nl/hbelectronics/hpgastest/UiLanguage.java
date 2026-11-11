@@ -59,6 +59,11 @@ public final class UiLanguage {
   add("Setting not saved","Instelling niet opgeslagen","Einstellung nicht gespeichert","Paramètre non enregistré");
   add("Green brightness (%)","Groene helderheid (%)","Grüne Helligkeit (%)","Luminosité verte (%)");
   add("Number of physical LEDs","Aantal fysieke leds","Anzahl physischer LEDs","Nombre de LED physiques");
+  add("Enter the total number of LEDs. In Double mirrored mode this must be even: 37 LEDs per row = 74 total.","Vul het totale aantal leds in. Bij Dubbel gespiegeld moet dit even zijn: 37 leds per rij = 74 totaal.","Geben Sie die Gesamtzahl der LEDs ein. Bei doppelt gespiegelt muss sie gerade sein: 37 LEDs pro Reihe = 74 insgesamt.","Saisissez le nombre total de LED. En mode double miroir, ce nombre doit être pair : 37 LED par rangée = 74 au total.");
+  add("Enter the total number of physical LEDs (1–256).","Vul het totale aantal fysieke leds in (1–256).","Geben Sie die Gesamtzahl physischer LEDs ein (1–256).","Saisissez le nombre total de LED physiques (1–256).");
+  add("Enter a total of 1–256 LEDs.","Vul in totaal 1–256 leds in.","Geben Sie insgesamt 1–256 LEDs ein.","Saisissez un total de 1 à 256 LED.");
+  add("Double mirrored requires an even total. For 37 LEDs per row, enter 74.","Dubbel gespiegeld vereist een even totaal. Bij 37 leds per rij vul je 74 in.","Doppelt gespiegelt erfordert eine gerade Gesamtzahl. Bei 37 LEDs pro Reihe geben Sie 74 ein.","Le mode double miroir nécessite un total pair. Pour 37 LED par rangée, saisissez 74.");
+  add("The 8 × 32 matrix layout requires exactly 256 LEDs.","Voor de 8 × 32-matrix zijn precies 256 leds vereist.","Die 8 × 32-Matrix erfordert genau 256 LEDs.","La matrice 8 × 32 nécessite exactement 256 LED.");
   add("LED layout (0 single, 1 double, 2 matrix)","LED-indeling (0 enkel, 1 dubbel, 2 matrix)","LED-Anordnung (0 einzeln, 1 doppelt, 2 Matrix)","Disposition LED (0 simple, 1 double, 2 matrice)");
   add("Orange effect (1–40)","Oranje effect (1–40)","Orangeeffekt (1–40)","Effet orange (1–40)");
   add("Orange brightness (%)","Oranje helderheid (%)","Orange Helligkeit (%)","Luminosité orange (%)");
