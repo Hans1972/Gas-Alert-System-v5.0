@@ -650,6 +650,48 @@ public final class MainActivity extends Activity {
    showSettingNotice(false,title,tr("Settings are blocked while the orange alarm is active. Reset the alarm to NORMAL (green) before changing settings."));
    return;
   }
+  if("leds".equals(key)){
+   // The firmware stores the PHYSICAL TOTAL. In double-mirrored layout,
+   // ask for LEDs per row and send twice that count (e.g. 37 -> 74).
+   boolean doubleRow="1".equals(valueOf(ble.config,"layout"));
+   int currentTotal=36;
+   try{currentTotal=Integer.parseInt(valueOf(ble.config,"leds"));}catch(Exception ignored){}
+   EditText count=new EditText(this);
+   count.setSingleLine(true);
+   count.setSelectAllOnFocus(true);
+   count.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+   count.setText(String.valueOf(doubleRow?currentTotal/2:currentTotal));
+   count.setSelectAllOnFocus(true);
+   LinearLayout form=new LinearLayout(this);
+   form.setOrientation(LinearLayout.VERTICAL);
+   form.setPadding(dp(22),dp(8),dp(22),dp(2));
+   TextView explanation=new TextView(this);
+   explanation.setText(doubleRow
+     ?tr("Enter the number of LEDs per row. The app calculates the physical total automatically. Example: 37 per row = 74 LEDs.")
+     :tr("Enter the total number of physical LEDs (1–256)."));
+   explanation.setTextSize(14);explanation.setTextColor(Color.LTGRAY);
+   form.addView(explanation,new LinearLayout.LayoutParams(-1,-2));
+   form.addView(count,new LinearLayout.LayoutParams(-1,dp(56)));
+   AlertDialog inputDialog=new AlertDialog.Builder(this)
+    .setTitle(doubleRow?tr("LEDs per row"):tr("Number of physical LEDs"))
+    .setView(form)
+    .setNegativeButton(tr("Cancel"),null)
+    .setPositiveButton(tr("Save"),null).create();
+   inputDialog.setOnShowListener(d->inputDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+    String value=count.getText().toString().trim();
+    int perRowMax=doubleRow?128:256;
+    int amount;
+    try{amount=Integer.parseInt(value);}catch(NumberFormatException ex){amount=0;}
+    if(amount<1||amount>perRowMax){
+     count.setError(doubleRow?tr("Enter 1–128 LEDs per row."):tr("Enter 1–256 LEDs."));
+     return;
+    }
+    int physicalTotal=doubleRow?amount*2:amount;
+    if(saveSettingWithFeedback(key,String.valueOf(physicalTotal),title,origin))inputDialog.dismiss();
+   }));
+   inputDialog.show();
+   return;
+  }
   int[] range=sliderRange(key);
   if(range!=null){
    int lower=range[0],upper=range[1],step=range[2],initial=lower;
