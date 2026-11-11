@@ -318,7 +318,7 @@ public final class MainActivity extends Activity {
   String[] names={"Green brightness (%)","Number of physical LEDs","LED layout (0 single, 1 double, 2 matrix)","Orange effect (1–40)","Orange brightness (%)","Orange hue (0–100)","Animation speed (25–200%)","Afterglow (0–100)","Color order (0–5)","Buzzer (0 continuous, 1 pulsed)","Buzzer duration (seconds)","Pulse ON (milliseconds)","Pulse OFF (milliseconds)"};
   // Existing hardware settings remain immediately visible, without an accordion.
   boolean connected=ble!=null&&ble.ready&&ble.revision>=0;
-  boolean editable=connected&&licenseManager!=null&&licenseManager.hasValidLicense();
+  boolean editable=connected&&canEditControllerSettings()&&licenseManager!=null&&licenseManager.hasValidLicense();
   // When offline, hardware settings cannot be edited. Show General Settings directly.
   if(connected)for(int i=0;i<keys.length;i++){
    final String key=keys[i],title=tr(names[i]);
@@ -624,19 +624,24 @@ public final class MainActivity extends Activity {
   popup.setOnShowListener(d->popup.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color));
   popup.show();
  }
+ private boolean canEditControllerSettings(){
+  return ble!=null&&ble.ready&&("NORMAL".equals(ble.mode)||"OFF".equals(ble.mode));
+ }
  private boolean saveSettingWithFeedback(String key,String raw,String title,Button origin){
   if(ble==null||!ble.ready){
    showSettingNotice(false,title,tr("Controller is not connected."));
    return false;
   }
-  if(!"NORMAL".equals(ble.mode)){
-   showSettingNotice(false,title,tr("Settings can only be changed in NORMAL (green). Reset the orange alarm first."));
+  if(!canEditControllerSettings()){
+   showSettingNotice(false,title,"ALARM".equals(ble.mode)
+    ?tr("Settings are unavailable during the orange alarm. Reset to NORMAL (green) first.")
+    :tr("Controller status not ready. Wait for a confirmed NORMAL (green) or OFF (lights off) state."));
    return false;
   }
   boolean accepted=ble.saveSetting(key,raw,(confirmed,detail)->runOnUiThread(()->{
    if(confirmed){
     origin.setText(title+"\n"+displayValue(key,raw));
-    showSettingNotice(true,title,tr("The controller confirmed the setting in NORMAL (green).")+" "+displayValue(key,raw));
+    showSettingNotice(true,title,tr("The controller confirmed the setting.")+" "+displayValue(key,raw));
    }else{
     showSettingNotice(false,title,detail);
    }
@@ -646,8 +651,10 @@ public final class MainActivity extends Activity {
  }
  private void editSetting(String key,String title,Button origin){
   if(!allowLicensedControl()||ble==null||!ble.ready)return;
-  if(!"NORMAL".equals(ble.mode)){
-   showSettingNotice(false,title,tr("Settings are blocked while the orange alarm is active. Reset the alarm to NORMAL (green) before changing settings."));
+  if(!canEditControllerSettings()){
+   showSettingNotice(false,title,"ALARM".equals(ble.mode)
+    ?tr("Settings are unavailable during the orange alarm. Reset to NORMAL (green) first.")
+    :tr("Controller status not ready. Wait for a confirmed NORMAL (green) or OFF (lights off) state."));
    return;
   }
   if("leds".equals(key)){
