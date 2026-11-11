@@ -83,7 +83,7 @@ public final class HpBleService extends Service {
   return null;
  }
  public boolean saveSetting(String key,String value,SaveCallback cb){
-  if(cb==null||key==null||value==null||saveCallback!=null||releasePending||!ready||!authorized||!"NORMAL".equals(mode)
+  if(cb==null||key==null||value==null||saveCallback!=null||releasePending||!ready||!authorized||!("NORMAL".equals(mode)||"OFF".equals(mode))
      ||!new HbLicenseManager(this).hasValidLicense())return false;
   // No concurrent queued settings/preview commands during verified readback.
   sendQueue.removeIf(q->q.startsWith("PREVIEW "));
