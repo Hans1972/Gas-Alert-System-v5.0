@@ -651,42 +651,49 @@ public final class MainActivity extends Activity {
    return;
   }
   if("leds".equals(key)){
-   // The firmware stores the PHYSICAL TOTAL. In double-mirrored layout,
-   // ask for LEDs per row and send twice that count (e.g. 37 -> 74).
-   boolean doubleRow="1".equals(valueOf(ble.config,"layout"));
+   // The firmware expects the TOTAL physical count, even in mirrored layout.
+   // Show the rule before saving, instead of relying on a generic BLE failure.
+   boolean mirrored="1".equals(valueOf(ble.config,"layout"));
+   boolean matrix="2".equals(valueOf(ble.config,"layout"));
    int currentTotal=36;
    try{currentTotal=Integer.parseInt(valueOf(ble.config,"leds"));}catch(Exception ignored){}
    EditText count=new EditText(this);
    count.setSingleLine(true);
    count.setSelectAllOnFocus(true);
    count.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-   count.setText(String.valueOf(doubleRow?currentTotal/2:currentTotal));
-   count.setSelectAllOnFocus(true);
+   count.setText(String.valueOf(currentTotal));
    LinearLayout form=new LinearLayout(this);
    form.setOrientation(LinearLayout.VERTICAL);
    form.setPadding(dp(22),dp(8),dp(22),dp(2));
    TextView explanation=new TextView(this);
-   explanation.setText(doubleRow
-     ?tr("Enter the number of LEDs per row. The app calculates the physical total automatically. Example: 37 per row = 74 LEDs.")
+   explanation.setText(mirrored
+     ?tr("Enter the total number of LEDs. In Double mirrored mode this must be even: 37 LEDs per row = 74 total.")
+     :matrix?tr("The 8 × 32 matrix layout requires exactly 256 LEDs.")
      :tr("Enter the total number of physical LEDs (1–256)."));
    explanation.setTextSize(14);explanation.setTextColor(Color.LTGRAY);
    form.addView(explanation,new LinearLayout.LayoutParams(-1,-2));
    form.addView(count,new LinearLayout.LayoutParams(-1,dp(56)));
    AlertDialog inputDialog=new AlertDialog.Builder(this)
-    .setTitle(doubleRow?tr("LEDs per row"):tr("Number of physical LEDs"))
+    .setTitle(tr("Number of physical LEDs"))
     .setView(form)
     .setNegativeButton(tr("Cancel"),null)
     .setPositiveButton(tr("Save"),null).create();
    inputDialog.setOnShowListener(d->inputDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
-    String value=count.getText().toString().trim();
-    int perRowMax=doubleRow?128:256;
-    int amount;
-    try{amount=Integer.parseInt(value);}catch(NumberFormatException ex){amount=0;}
-    if(amount<1||amount>perRowMax){
-     count.setError(doubleRow?tr("Enter 1–128 LEDs per row."):tr("Enter 1–256 LEDs."));
+    int physicalTotal;
+    try{physicalTotal=Integer.parseInt(count.getText().toString().trim());}
+    catch(NumberFormatException ex){physicalTotal=0;}
+    if(physicalTotal<1||physicalTotal>256){
+     count.setError(tr("Enter a total of 1–256 LEDs."));
      return;
     }
-    int physicalTotal=doubleRow?amount*2:amount;
+    if(mirrored&&(physicalTotal%2)!=0){
+     count.setError(tr("Double mirrored requires an even total. For 37 LEDs per row, enter 74."));
+     return;
+    }
+    if(matrix&&physicalTotal!=256){
+     count.setError(tr("The 8 × 32 matrix layout requires exactly 256 LEDs."));
+     return;
+    }
     if(saveSettingWithFeedback(key,String.valueOf(physicalTotal),title,origin))inputDialog.dismiss();
    }));
    inputDialog.show();
